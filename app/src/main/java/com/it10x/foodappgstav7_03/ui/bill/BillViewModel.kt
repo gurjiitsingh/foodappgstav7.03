@@ -106,8 +106,17 @@ class BillViewModel(
                 val doneItems = kotItems.filter { it.status == "DONE" }
 
                 val billingItems = doneItems
-                    .groupBy { it.productId }
+                    .groupBy {
+                        listOf(
+                            it.productId,
+                            it.basePrice,
+                            it.taxRate,
+                            it.note,
+                            it.modifiersJson
+                        )
+                    }
                     .map { (_, group) ->
+
                         val first = group.first()
                         val quantity = group.sumOf { it.quantity }
                         val itemTotal = first.basePrice * quantity
@@ -119,15 +128,18 @@ class BillViewModel(
                         }
 
                         BillingItemUi(
-                            id = first.productId,
+                            id = first.id, // IMPORTANT: use KOT item id, not productId
                             name = first.name,
                             basePrice = first.basePrice,
                             quantity = quantity,
                             itemtotal = itemTotal,
                             taxTotal = taxTotal,
-                            finalTotal = itemTotal + taxTotal
+                            finalTotal = itemTotal + taxTotal,
+                            note = first.note,
+                            modifiersJson = first.modifiersJson
                         )
                     }
+
 
                 val subtotal = billingItems.sumOf { it.itemtotal }
                 val tax = billingItems.sumOf { it.taxTotal }

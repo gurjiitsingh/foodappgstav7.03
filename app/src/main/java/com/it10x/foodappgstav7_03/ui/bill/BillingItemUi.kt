@@ -7,5 +7,7 @@ data class BillingItemUi(
     val quantity: Int,
     val finalTotal: Double,
     val itemtotal: Double,
-    val taxTotal: Double
+    val taxTotal: Double,
+    val note: String,
+    val modifiersJson: String,
 )

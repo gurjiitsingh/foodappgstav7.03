@@ -19,7 +19,7 @@ import com.it10x.foodappgstav7_03.data.pos.entities.config.*
         PosKotBatchEntity::class,
         OrderSequenceEntity::class
     ],
-    version = 61,              // ⬆️ increment version since schema changed
+    version = 62,              // ⬆️ increment version since schema changed
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
