@@ -556,12 +556,6 @@ fun PosScreen(
 
 
 
-
-
-
-
-
-
                 if (showTableSelector && orderType == "DINE_IN") {
                     TableSelectorGrid(
                         tables = tables, // ✅ use dynamic list
