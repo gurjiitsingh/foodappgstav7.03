@@ -184,55 +184,6 @@ fun PosScreen(
 
 
 
-//    val filteredProducts = remember(
-//        parentProducts,
-//        selectedCatId,
-//        searchQuery,
-//        codeQuery,
-//        activeTarget
-//    ) {
-//        val query = when (activeTarget) {
-//            SearchTarget.NAME -> searchQuery.trim().lowercase()
-//            SearchTarget.CODE -> codeQuery.trim().lowercase()
-//        }
-//
-//        if (query.isNotEmpty()) {
-//            parentProducts.filter { product ->
-//                when (activeTarget) {
-//                    SearchTarget.NAME -> product.name.lowercase().contains(query)
-//                    SearchTarget.CODE -> product.searchCode?.lowercase()?.contains(query) == true
-//                }
-//            }
-//        } else {
-//            if (selectedCatId == null) emptyList()
-//            else parentProducts.filter { it.categoryId == selectedCatId }
-//        }
-//    }
-
-
-
-//    val filteredProducts = remember(
-//        parentProducts,
-//        selectedCatId,
-//        searchQuery
-//    ) {
-//        val query = searchQuery.trim().lowercase()
-//
-//        if (query.isNotEmpty()) {
-//            parentProducts.filter { product ->
-//                product.name.lowercase().contains(query) ||
-//                        product.searchCode?.lowercase()?.contains(query) == true
-//            }
-//        } else {
-//            if (selectedCatId == null) {
-//                emptyList()
-//            } else {
-//                parentProducts.filter { it.categoryId == selectedCatId }
-//            }
-//        }
-//    }
-
-
 
 
 
