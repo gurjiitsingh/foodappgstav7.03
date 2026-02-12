@@ -150,7 +150,7 @@ fun RightPanel(
             else -> false
         }
 
-    val canOpenKitchen = true //hasKitchenItems
+    val canOpenKitchen = hasItems
   //  val canOpenBill = hasBillItems
 
     Column(

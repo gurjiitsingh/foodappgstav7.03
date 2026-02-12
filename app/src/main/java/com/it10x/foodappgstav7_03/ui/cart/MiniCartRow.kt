@@ -18,8 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCartEntity
-import com.it10x.foodappgstav7_03.ui.theme.PosError
-import com.it10x.foodappgstav7_03.ui.theme.PosSuccess
+
+
 
 @Composable
 fun MiniCartRow(
