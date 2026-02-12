@@ -18,7 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCartEntity
 import com.it10x.foodappgstav7_03.ui.theme.PosError
-
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.runtime.*
 
 @Composable
 fun CartRow(
@@ -27,6 +28,9 @@ fun CartRow(
     cartViewModel: CartViewModel,
     onCartActionDirectMoveToBill: (item: PosCartEntity, print: Boolean) -> Unit
 ) {
+
+    var showNoteDialog by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -46,26 +50,56 @@ fun CartRow(
             )
         }
 
+        IconButton(
+            onClick = { showNoteDialog = true },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Add Note",
+                tint = Color(0xFFFFB703)
+            )
+        }
+
+
         // 🧾 Item name + price
+        // 🧾 Item name + note + price
         Row(
             modifier = Modifier
-                .weight(2.0f) // 🔹 more width for long names
+                .weight(2.0f)
                 .padding(start = 4.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = item.name,
-                fontWeight = FontWeight.Medium,
-                fontSize = 15.sp,
-                color = Color(0xFFE0E0E0), // light gray text for dark bg
+
+            Column(
                 modifier = Modifier.weight(1f)
-            )
+            ) {
+
+                Text(
+                    text = item.name,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp,
+                    color = Color(0xFFE0E0E0)
+                )
+
+                item.note?.let { note ->
+                    if (note.isNotBlank()) {
+                        Text(
+                            text = "📝 $note",
+                            fontSize = 12.sp,
+                            color = Color(0xFFFFB703)
+                        )
+                    }
+                }
+            }
+
             Text(
                 text = "₹${item.basePrice}",
                 fontSize = 13.sp,
-                color = Color(0xFFBDBDBD) // softer gray
+                color = Color(0xFFBDBDBD)
             )
         }
+
 
         // ➕ Quantity controls (more readable)
         Row(
@@ -158,4 +192,40 @@ fun CartRow(
     }
 
     Divider(color = Color.LightGray.copy(alpha = 0.25f))
+
+    if (showNoteDialog) {
+
+        var noteText by remember { mutableStateOf(item.note ?: "") }
+
+        AlertDialog(
+            onDismissRequest = { showNoteDialog = false },
+            title = { Text("Kitchen Note") },
+            text = {
+                OutlinedTextField(
+                    value = noteText,
+                    onValueChange = { noteText = it },
+                    label = { Text("Special Instructions") },
+                    singleLine = false
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        cartViewModel.updateNote(item, noteText)
+                        showNoteDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showNoteDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 }

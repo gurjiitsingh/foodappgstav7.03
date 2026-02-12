@@ -4,21 +4,24 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-
 @Entity(
     tableName = "cart",
     indices = [
-        Index(value = ["productId", "tableId"], unique = true)
+        // Allow same product multiple times IF note or modifiers differ
+        Index(
+            value = ["productId", "tableId", "note", "modifiersJson"],
+            unique = true
+        )
     ]
 )
 data class PosCartEntity(
+
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
 
     val productId: String,
     val name: String,
     val categoryId: String,
-
     val parentId: String?,
     val isVariant: Boolean,
 
@@ -28,13 +31,20 @@ data class PosCartEntity(
     val taxRate: Double,
     val taxType: String,
 
-    // 🔑 NEW (PRIMARY POS SESSION)
+    // 🔑 POS SESSION
     val sessionId: String,
 
-    // 🪑 OPTIONAL (only for DINE_IN)
+    // 🪑 Only for DINE_IN
     val tableId: String?,
 
-    // ⭐ NEW
+    // 📝 Free text kitchen instruction
+    val note: String? = null,
+
+    // ⭐ Structured modifiers (future support: size, toppings, addons)
+    // Store as JSON string
+    val modifiersJson: String? = null,
+
+    // 🚀 Kitchen workflow
     val sentToKitchen: Boolean = false,
 
     val createdAt: Long = System.currentTimeMillis()

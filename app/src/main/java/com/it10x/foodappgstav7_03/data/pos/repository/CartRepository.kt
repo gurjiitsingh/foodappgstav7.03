@@ -11,6 +11,37 @@ class CartRepository(
     private val tableDao: TableDao
 ) {
 
+    suspend fun updateNote(item: PosCartEntity, newNote: String?) {
+
+        val cleanNote = newNote?.trim()?.ifEmpty { null }
+
+        val existing = dao.findMatchingItem(
+            productId = item.productId,
+            tableId = item.tableId,
+            note = cleanNote,
+            modifiersJson = item.modifiersJson
+        )
+
+        if (existing != null && existing.id != item.id) {
+
+            // 🔥 Merge quantities
+            dao.update(
+                existing.copy(
+                    quantity = existing.quantity + item.quantity
+                )
+            )
+
+            // Remove old row
+            dao.deleteById(item.id)
+
+        } else {
+            dao.update(item.copy(note = cleanNote))
+        }
+
+        item.tableId?.let { syncCartCount(it) }
+    }
+
+
     // ---------- OBSERVE CART (per table) ----------
 
     fun observeCart(scopeKey: String): Flow<List<PosCartEntity>> =

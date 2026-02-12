@@ -116,4 +116,26 @@ interface CartDao {
     suspend fun getCartCountForTable(tableId: String): Int?
 
 
+    @Query("""
+    SELECT * FROM cart
+    WHERE productId = :productId
+    AND tableId = :tableId
+    AND note IS :note
+    AND modifiersJson IS :modifiersJson
+    LIMIT 1
+""")
+    suspend fun findMatchingItem(
+        productId: String,
+        tableId: String?,
+        note: String?,
+        modifiersJson: String?
+    ): PosCartEntity?
+
+    @Query("SELECT * FROM cart WHERE id = :id LIMIT 1")
+    suspend fun getById(id: Long): PosCartEntity?
+
+    @Query("DELETE FROM cart WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+
 }

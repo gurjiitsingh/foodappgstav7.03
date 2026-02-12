@@ -218,7 +218,7 @@ fun PosScreen(
     // ✅ NEW: POPUP STATES
     var showKitchen by remember { mutableStateOf(false) }
     var showBill by remember { mutableStateOf(false) }
-
+    var showCategorySelector by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(orderType, tableId) {
@@ -235,34 +235,35 @@ fun PosScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
 
+
         Row(modifier = Modifier.fillMaxSize()) {
 
             // ---------- LEFT CATEGORY SIDEBAR ----------
-            Column(
-                modifier = Modifier
-                    .width(140.dp)
-                    .fillMaxHeight()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(15.dp)   // ✅ SAME AS PRODUCTS
-            ) {
-
-
-
-                Spacer(Modifier.height(8.dp))
-
-                LazyColumn {
-                    items(categories) { c ->
-                        CategoryButton(
-                            label = toTitleCase(c.name),
-                            selected = selectedCatId == c.id,
-                          //  showSearchKeyboard = false
-                        ) {
-                            selectedCatId = c.id
-                        }
-                        Spacer(Modifier.height(8.dp))
-                    }
-                }
-            }
+//            Column(
+//                modifier = Modifier
+//                    .width(140.dp)
+//                    .fillMaxHeight()
+//                    .background(MaterialTheme.colorScheme.surface)
+//                    .padding(15.dp)   // ✅ SAME AS PRODUCTS
+//            ) {
+//
+//
+//
+//                Spacer(Modifier.height(8.dp))
+//
+//                LazyColumn {
+//                    items(categories) { c ->
+//                        CategoryButton(
+//                            label = toTitleCase(c.name),
+//                            selected = selectedCatId == c.id,
+//                          //  showSearchKeyboard = false
+//                        ) {
+//                            selectedCatId = c.id
+//                        }
+//                        Spacer(Modifier.height(8.dp))
+//                    }
+//                }
+//            }
 
 
 
@@ -377,6 +378,14 @@ fun PosScreen(
                             selected = true,
                             onClick = { showTableSelector = true }
                         )
+                    }
+
+                    // --- CATEGORY SELECTOR BUTTON ---
+                    Button(
+                        onClick = { showCategorySelector = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Text("Select Category", color = MaterialTheme.colorScheme.onPrimary)
                     }
 
 
@@ -542,9 +551,6 @@ fun PosScreen(
 
 
 
-
-
-
                 ProductList(
                     filteredProducts = filteredProducts,
                     variants = variants,
@@ -553,6 +559,19 @@ fun PosScreen(
                     tableNo = tableId,  // fallback if null
                     posSessionViewModel = posSessionViewModel  // 🔑 pass it
                 )
+
+
+                if (showCategorySelector) {
+                    CategorySelectorDialog(
+                        categories = categories,
+                        selectedCatId = selectedCatId,
+                        onCategorySelected = { id ->
+                            selectedCatId = id
+                        },
+                        onDismiss = { showCategorySelector = false }
+                    )
+                }
+
 
 
 

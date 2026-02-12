@@ -29,7 +29,7 @@ class CartViewModel(
 //            "CartViewModel CREATED hash=${this.hashCode()}"
 //        )
 //    }
-    // ---------- ORDER CONTEXT ----------
+// ---------- ORDER CONTEXT ----------
     private val currentTableId =
         savedStateHandle.getStateFlow<String?>("tableId", null)
 
@@ -180,6 +180,11 @@ class CartViewModel(
     }
 
 
+    fun updateNote(item: PosCartEntity, note: String?) {
+        viewModelScope.launch {
+            repository.updateNote(item, note)
+        }
+    }
 
 
 }
