@@ -116,6 +116,14 @@ class CartViewModel(
     }
 
 
+    fun increase(item: PosCartEntity) {
+
+        if (!canMutateCart()) return
+
+        viewModelScope.launch {
+            repository.increaseById(item.id, item.tableId!!)
+        }
+    }
     fun decrease(productId: String, tableNo: String) {
         if (!canMutateCart()) return
 

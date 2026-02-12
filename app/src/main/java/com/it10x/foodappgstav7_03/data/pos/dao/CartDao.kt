@@ -95,8 +95,7 @@ interface CartDao {
     @Query("SELECT * FROM cart WHERE sessionId = :sessionId")
     fun getCartBySessionId(sessionId: String): Flow<List<PosCartEntity>>
 
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(product: PosCartEntity)
 
     @Query("SELECT * FROM cart")
@@ -115,27 +114,51 @@ interface CartDao {
     @Query("SELECT SUM(quantity) FROM cart WHERE tableId = :tableId")
     suspend fun getCartCountForTable(tableId: String): Int?
 
+//
+//    @Query("""
+//    SELECT * FROM cart
+//    WHERE productId = :productId
+//    AND tableId = :tableId
+//    AND (
+//        (note IS NULL AND :note IS NULL)
+//        OR note = :note
+//    )
+//    AND (
+//        (modifiersJson IS NULL AND :modifiersJson IS NULL)
+//        OR modifiersJson = :modifiersJson
+//    )
+//    LIMIT 1
+//""")
+//    suspend fun findMatchingItem(
+//        productId: String,
+//        tableId: String?,
+//        note: String?,
+//        modifiersJson: String?
+//    ): PosCartEntity?
 
-    @Query("""
-    SELECT * FROM cart
-    WHERE productId = :productId
-    AND tableId = :tableId
-    AND note IS :note
-    AND modifiersJson IS :modifiersJson
-    LIMIT 1
-""")
-    suspend fun findMatchingItem(
-        productId: String,
-        tableId: String?,
-        note: String?,
-        modifiersJson: String?
-    ): PosCartEntity?
 
     @Query("SELECT * FROM cart WHERE id = :id LIMIT 1")
     suspend fun getById(id: Long): PosCartEntity?
 
     @Query("DELETE FROM cart WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+
+    @Query("""
+SELECT * FROM cart
+WHERE productId = :productId
+AND tableId = :tableId
+AND note = :note
+AND modifiersJson = :modifiersJson
+LIMIT 1
+""")
+    suspend fun findMatchingItem(
+        productId: String,
+        tableId: String?,
+        note: String,
+        modifiersJson: String
+    ): PosCartEntity?
+
 
 
 }

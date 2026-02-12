@@ -423,6 +423,8 @@ class KitchenViewModel(
                         quantity = cart.quantity,
                         taxRate = cart.taxRate,
                         taxType = cart.taxType,
+                        note = cart.note,
+                        modifiersJson = cart.modifiersJson,
                         isPrinted = false,
                         status = "DONE",   // ✅ REQUIRED
                         createdAt = now
@@ -492,6 +494,8 @@ class KitchenViewModel(
                 quantity = cart.quantity,
                 taxRate = cart.taxRate,
                 taxType = cart.taxType,
+                note = cart.note,
+                modifiersJson = cart.modifiersJson,
                 status = "DONE",
                 isPrinted = false,
                 createdAt = now
@@ -574,6 +578,8 @@ class KitchenViewModel(
                     quantity = cart.quantity,
                     taxRate = cart.taxRate,
                     taxType = cart.taxType,
+                    note = cart.note,
+                    modifiersJson = cart.modifiersJson,
                     isPrinted = false,
                     status = "DONE",
                     createdAt = now

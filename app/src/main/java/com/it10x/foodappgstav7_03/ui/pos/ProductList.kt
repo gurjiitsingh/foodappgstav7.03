@@ -184,6 +184,8 @@ private fun ParentProductCard(
                                 productId = product.id,
                                 name = toTitleCase(product.name),
                                 basePrice = price,
+                                note = "",                // ✅ change here
+                                modifiersJson = "",       // ✅ change here
                                 quantity = 1,
                                 taxRate = product.taxRate ?: 0.0,
                                 taxType = product.taxType ?: "inclusive",

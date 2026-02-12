@@ -334,14 +334,60 @@ ${"-".repeat(48)}
             append("------------------------\n")
         }
 
+//        val itemsBlock =
+//            if (items.isEmpty()) {
+//                "No items\n"
+//            } else {
+//                items.joinToString("\n") {
+//                    "${it.quantity.toString().padEnd(3)} ${it.name}"
+//                } + "\n"
+//            }
+
         val itemsBlock =
             if (items.isEmpty()) {
                 "No items\n"
             } else {
-                items.joinToString("\n") {
-                    "${it.quantity.toString().padEnd(3)} ${it.name}"
-                } + "\n"
+                buildString {
+                    items.forEach { item ->
+
+                        // 🔹 Main item line
+                        append("${item.quantity.toString().padEnd(3)} ${item.name}\n")
+
+                        // 🔹 Modifiers (if any)
+                        if (item.modifiersJson.isNotEmpty()) {
+                            try {
+                                val modifiers = item.modifiersJson
+                                    .removePrefix("[")
+                                    .removeSuffix("]")
+                                    .split(",")
+                                    .map { it.trim().replace("\"", "") }
+                                    .filter { it.isNotBlank() }
+
+                                modifiers.forEach { modifier ->
+                                    append("      + $modifier\n")
+                                }
+                            } catch (_: Exception) {
+                                append("      + ${item.modifiersJson}\n")
+                            }
+                        }
+
+                        // 🔹 Note (if any)
+                        if (item.note.isNotEmpty()) {
+                            append("      → ${item.note}\n")
+                        }
+
+                        append("\n")
+                    }
+                }
             }
+
+//        val modifiers = Gson().fromJson(
+//            item.modifiersJson,
+//            Array<String>::class.java
+//        )
+//        Instead of manual split.
+//        But current version works fine.
+
 
         return buildString {
             append(ALIGN_LEFT)
@@ -449,7 +495,7 @@ Thank You!
             info.addressLine3?.let { lines += it.take(width) }
             info.city?.let { lines += it.take(width) }
             info.phone?.let { lines += "Phone: $it" }
-           info.phone2?.let { lines += " $it" }
+            info.phone2?.let { lines += " $it" }
             info.email?.let { lines += "Email: $it" }
             info.web?.let { lines += "Web: $it" }
             info.gst?.let { lines += "GST: $it" }

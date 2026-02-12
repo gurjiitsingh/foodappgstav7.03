@@ -13,33 +13,36 @@ class CartRepository(
 
     suspend fun updateNote(item: PosCartEntity, newNote: String?) {
 
-        val cleanNote = newNote?.trim()?.ifEmpty { null }
+        val cleanNote = newNote?.trim().orEmpty()
 
         val existing = dao.findMatchingItem(
             productId = item.productId,
             tableId = item.tableId,
             note = cleanNote,
-            modifiersJson = item.modifiersJson
+            modifiersJson = item.modifiersJson ?: ""
         )
 
         if (existing != null && existing.id != item.id) {
 
-            // 🔥 Merge quantities
+            // Merge quantities
             dao.update(
                 existing.copy(
                     quantity = existing.quantity + item.quantity
                 )
             )
 
-            // Remove old row
+            // Delete old row
             dao.deleteById(item.id)
 
         } else {
-            dao.update(item.copy(note = cleanNote))
+            dao.update(
+                item.copy(note = cleanNote)
+            )
         }
 
         item.tableId?.let { syncCartCount(it) }
     }
+
 
 
     // ---------- OBSERVE CART (per table) ----------
@@ -54,16 +57,47 @@ class CartRepository(
     }
     // ---------- ADD ----------
     suspend fun addToCart(product: PosCartEntity, tableNo: String) {
-        val existing = dao.getItemByIdForTable(product.productId, tableId = tableNo)
-       // Log.d("TABLE_DEBUG", "item :${existing} table${tableNo}")
-        if (existing == null) {
-            dao.insert(product.copy(quantity = 1))
+//        val existing = dao.getItemByIdForTable(product.productId, tableId = tableNo)
+//       // Log.d("TABLE_DEBUG", "item :${existing} table${tableNo}")
+//        if (existing == null) {
+//            dao.insert(product.copy(quantity = 1))
+//
+//        } else {
+//            dao.update(existing.copy(quantity = existing.quantity + 1))
+//        }
+//        syncCartCount(tableNo)
 
+        val cleanNote = normalizeNote(product.note)
+        val cleanModifiers = normalizeNote(product.modifiersJson)
+
+        val existing = dao.findMatchingItem(
+            product.productId,
+            product.tableId,
+            cleanNote,
+            cleanModifiers
+        )
+
+        if (existing != null) {
+            dao.update(existing.copy(quantity = existing.quantity + product.quantity))
         } else {
-            dao.update(existing.copy(quantity = existing.quantity + 1))
+            dao.insert(product.copy(
+                note = cleanNote,
+                modifiersJson = cleanModifiers
+            ))
         }
-        syncCartCount(tableNo)
 
+
+
+
+    }
+
+    suspend fun increaseById(id: Long, tableNo: String) {
+
+        val existing = dao.getById(id) ?: return
+
+        dao.update(existing.copy(quantity = existing.quantity + 1))
+
+        syncCartCount(tableNo)
     }
 
     suspend fun remove(productId: String, tableNo: String) {
@@ -110,6 +144,9 @@ suspend fun decrease(productId: String, tableNo: String) {
     syncCartCount(tableNo)
 }
 
+    private fun normalizeNote(note: String?): String {
+        return note?.trim().orEmpty()
+    }
 
 
 

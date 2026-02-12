@@ -200,7 +200,7 @@ fun RightPanel(
                 .weight(1f)
                 .padding(vertical = 6.dp)
         ) {
-            items(cartItems, key = { it.productId }) { item ->
+            items(cartItems, key = { it.id }) { item ->
                 MiniCartRow(
                     item = item,
                     cartViewModel = cartViewModel,

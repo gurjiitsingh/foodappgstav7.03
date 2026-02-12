@@ -127,7 +127,7 @@ fun CartRow(
             )
 
             IconButton(
-                onClick = { cartViewModel.addToCart(item) },
+                onClick = { cartViewModel.increase(item) },
                 modifier = Modifier
                     .size(28.dp)
                     .background(Color(0xFF16A34A), shape = MaterialTheme.shapes.small)

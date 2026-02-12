@@ -38,11 +38,11 @@ data class PosCartEntity(
     val tableId: String?,
 
     // 📝 Free text kitchen instruction
-    val note: String? = null,
+    val note: String = "",
 
     // ⭐ Structured modifiers (future support: size, toppings, addons)
     // Store as JSON string
-    val modifiersJson: String? = null,
+    val modifiersJson: String = "",
 
     // 🚀 Kitchen workflow
     val sentToKitchen: Boolean = false,

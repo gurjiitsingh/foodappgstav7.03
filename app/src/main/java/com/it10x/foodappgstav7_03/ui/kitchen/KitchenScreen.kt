@@ -72,7 +72,7 @@ fun KitchenScreen(
                     .fillMaxWidth()
                     .weight(1f)
             ) {
-                items(cartItems, key = { it.productId }) { item ->
+                items(cartItems, key = { it.id }) { item ->
                     CartRow(
                         item = item,
                         cartViewModel = cartViewModel,

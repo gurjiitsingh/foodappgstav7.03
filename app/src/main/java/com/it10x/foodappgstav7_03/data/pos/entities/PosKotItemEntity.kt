@@ -39,6 +39,9 @@ data class PosKotItemEntity(
     val taxType: String,
 
     val status: String,                 // PENDING / DONE
+    val note: String = "",
+    val modifiersJson: String = "",
+
     val isPrinted: Boolean,
 
     val createdAt: Long,
