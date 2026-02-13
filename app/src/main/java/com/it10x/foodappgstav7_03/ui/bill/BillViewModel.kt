@@ -141,6 +141,7 @@ class BillViewModel(
                     }
 
 
+
                 val subtotal = billingItems.sumOf { it.itemtotal }
                 val tax = billingItems.sumOf { it.taxTotal }
 
@@ -240,15 +241,28 @@ class BillViewModel(
             )
 
             val orderItems = kotItems
-                .groupBy { Triple(it.productId, it.basePrice, it.taxRate) }
+                .groupBy {
+                    listOf(
+                        it.productId,
+                        it.basePrice,
+                        it.taxRate,
+                        it.note,
+                        it.modifiersJson
+                    )
+                }
                 .map { (_, group) ->
+
                     val first = group.first()
                     val quantity = group.sumOf { it.quantity }
                     val subtotal = first.basePrice * quantity
+
                     val taxPerItem =
-                        if (first.taxType == "exclusive") first.basePrice * (first.taxRate / 100)
+                        if (first.taxType == "exclusive")
+                            first.basePrice * (first.taxRate / 100)
                         else 0.0
+
                     val taxTotalItem = taxPerItem * quantity
+
                     PosOrderItemEntity(
                         id = UUID.randomUUID().toString(),
                         orderMasterId = orderId,
@@ -264,11 +278,17 @@ class BillViewModel(
                         taxType = first.taxType,
                         taxAmountPerItem = taxPerItem,
                         taxTotal = taxTotalItem,
+                        // ✅ ADD THESE (if not already in entity)
+                        note = first.note,
+                        modifiersJson = first.modifiersJson,
                         finalPricePerItem = first.basePrice + taxPerItem,
                         finalTotal = subtotal + taxTotalItem,
-                        createdAt = now
+                        createdAt = now,
+
+
                     )
                 }
+
 
             // Save order and items atomically
             withContext(Dispatchers.IO) {

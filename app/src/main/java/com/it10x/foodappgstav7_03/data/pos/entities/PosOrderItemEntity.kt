@@ -51,6 +51,8 @@ data class PosOrderItemEntity(
     val taxAmountPerItem: Double,    // tax per item
     val taxTotal: Double,            // taxAmountPerItem * quantity
 
+    val note: String,
+    val modifiersJson: String,
     // =====================================================
     // FINAL VALUES (NEVER RECALCULATE)
     // =====================================================
@@ -62,4 +64,6 @@ data class PosOrderItemEntity(
     // =====================================================
     val source: String = "POS",
     val createdAt: Long              // System.currentTimeMillis()
+
+
 )
