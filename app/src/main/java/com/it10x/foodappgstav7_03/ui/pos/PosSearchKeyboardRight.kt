@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -15,6 +16,19 @@ fun PosSearchKeyboardRight(
     onClear: () -> Unit,
     onClose: () -> Unit
 ) {
+
+    // 🔥 Get screen width
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+
+    val maxButtonsInRow = 14
+    val totalSpacing = 6.dp * (maxButtonsInRow - 1)
+
+// 🔥 Calculate dynamic width
+    val calculatedWidth = (screenWidth - totalSpacing - 12.dp) / maxButtonsInRow
+
+// 🔥 LIMIT MAX WIDTH (IMPORTANT FIX)
+    val buttonWidth = minOf(calculatedWidth, 48.dp)
+
 
     Column(
         modifier = Modifier
@@ -42,7 +56,7 @@ fun PosSearchKeyboardRight(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
 
-                // 🔹 LEFT SIDE
+                // 🔹 LEFT SIDE LETTERS
                 Row(
                     modifier = Modifier.weight(4f),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -51,30 +65,16 @@ fun PosSearchKeyboardRight(
                     letterRows[i].forEach { key ->
                         KeyButtonStyled(
                             label = key,
-                            weight = 1f,
+                            width = buttonWidth,   // 🔥 UPDATED
                             height = 42.dp
                         ) { onKeyPress(key) }
                     }
 
                     if (i == 2) {
-                        // Add CLEAR, OK and BACKSPACE in same row
-                        KeyButtonStyled(
-                            label = "CLEAR",
-                            weight = 1f,
-                            height = 42.dp
-                        ) { onClear() }
-
-                        KeyButtonStyled(
-                            label = "OK",
-                            weight = 1f,
-                            height = 42.dp
-                        ) { onClose() }
-
-                        KeyButtonStyled(
-                            label = "⌫",
-                            weight = 1f,
-                            height = 42.dp
-                        ) { onBackspace() }
+                        // 🔥 Bottom row extra buttons
+                        KeyButtonStyled("CLEAR", buttonWidth, 42.dp) { onClear() }
+                        KeyButtonStyled("OK", buttonWidth, 42.dp) { onClose() }
+                        KeyButtonStyled("⌫", buttonWidth, 42.dp) { onBackspace() }
                     }
                 }
 
@@ -86,7 +86,7 @@ fun PosSearchKeyboardRight(
                     numberColumns[i].forEach { key ->
                         KeyButtonStyled(
                             label = key,
-                            weight = 1f,
+                            width = buttonWidth,   // 🔥 UPDATED
                             height = 42.dp
                         ) { onKeyPress(key) }
                     }
@@ -99,33 +99,33 @@ fun PosSearchKeyboardRight(
 
 
 
+
 @Composable
 fun KeyButtonStyled(
     label: String,
-    weight: Float = 1f,
+    width: Dp,           // 🔥 UPDATED: width instead of weight
     height: Dp = 44.dp,
     onClick: () -> Unit
 ) {
+
     val color = when (label) {
-        "OK" -> Color(0xFF81C784)     // soft green
-        "CLEAR" -> Color(0xFFFFCDD2)  // soft red
-        "⌫" -> Color(0xFFBBDEFB)      // soft blue
-        "SPACE" -> Color(0xFFFFF9C4)  // soft yellow
-        else -> Color(0xFFE0E0E0)     // default gray
+        "OK" -> Color(0xFF81C784)
+        "CLEAR" -> Color(0xFFFFCDD2)
+        "⌫" -> Color(0xFFBBDEFB)
+        else -> Color(0xFFE0E0E0)
     }
 
     val textColor = when (label) {
         "OK" -> Color(0xFF1B5E20)
         "CLEAR" -> Color(0xFFB71C1C)
         "⌫" -> Color(0xFF0D47A1)
-        "SPACE" -> Color(0xFF5D4037)
         else -> Color.Black
     }
 
     Button(
         onClick = onClick,
         modifier = Modifier
-            //.weight(weight)
+            .width(width)     // 🔥 FIXED WIDTH
             .height(height),
         colors = ButtonDefaults.buttonColors(containerColor = color),
         contentPadding = PaddingValues(vertical = 6.dp),
@@ -135,3 +135,4 @@ fun KeyButtonStyled(
         Text(label, color = textColor)
     }
 }
+

@@ -79,7 +79,7 @@ finalTotal=${item.finalTotal}
                     "taxTotal" to order.taxTotal,
                     "discountTotal" to order.discountTotal,
                     "grandTotal" to order.grandTotal,
-                    "paymentType" to order.paymentType,
+                    "paymentType" to order.paymentMode,
                     "paymentStatus" to order.paymentStatus,
                     "orderStatus" to order.orderStatus,
                     "source" to "POS",

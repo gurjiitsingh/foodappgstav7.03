@@ -17,7 +17,9 @@ object PosPrintMapper {
                 name = it.name,
                 quantity = it.quantity,
                 price = it.finalPricePerItem,
-                subtotal = it.finalTotal
+                subtotal = it.finalTotal,
+                note = it.note ?: "",
+                modifiersJson = it.modifiersJson ?: ""
             )
         }
 

@@ -93,7 +93,7 @@ fun LocalOrderDetailScreen(
 
                         Spacer(Modifier.height(6.dp))
 
-                        Text("Payment: ${o.paymentType}")
+                        Text("Payment: ${o.paymentMode}")
                         Text(
                             "Status: ${o.orderStatus}",
                             fontWeight = FontWeight.Medium,

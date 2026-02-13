@@ -16,7 +16,10 @@ data class OrderProductData(
     val finalPrice: Any? = null,
     val finalTotal: Any? = null,
 
-    val productCat: String = ""
+    val productCat: String = "",
+    val note: String?,
+    val modifiersJson: String?,
+
 ) {
     fun priceDouble() = price.toDoubleSafe()
     fun finalPriceDouble() = finalPrice.toDoubleSafe()

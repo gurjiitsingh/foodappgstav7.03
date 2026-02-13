@@ -40,7 +40,7 @@ interface OrderMasterDao {
     UPDATE pos_order_master
     SET orderStatus = 'PAID',
         paymentStatus = 'PAID',
-        paymentType = :paymentType,
+        paymentMode = :paymentType,
         updatedAt = :time
     WHERE tableNo = :tableNo
       AND orderStatus IN ('NEW', 'OPEN')

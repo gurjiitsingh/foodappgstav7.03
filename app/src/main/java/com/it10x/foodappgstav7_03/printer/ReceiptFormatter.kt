@@ -44,13 +44,51 @@ object ReceiptFormatter {
 
             val divider = "-".repeat(LINE_WIDTH)
 
-            val lines = order.items.joinToString("\n") { item ->
-                val qty = item.quantity.toString().padEnd(4)
-                val name = item.name.take(16).padEnd(16)
-                val price = format(item.price).padStart(6)
-                val total = format(item.subtotal).padStart(6)
-                qty + name + price + total
+//            val lines = order.items.joinToString("\n") { item ->
+//                val qty = item.quantity.toString().padEnd(4)
+//                val name = item.name.take(16).padEnd(16)
+//                val price = format(item.price).padStart(6)
+//                val total = format(item.subtotal).padStart(6)
+//                qty + name + price + total
+//            }
+
+            val lines = buildString {
+
+                order.items.forEach { item ->
+
+                    val qty = item.quantity.toString().padEnd(4)
+                    val name = item.name.take(16).padEnd(16)
+                    val price = format(item.price).padStart(6)
+                    val total = format(item.subtotal).padStart(6)
+
+                    // 🔹 Main item line (32 chars total)
+                    append(qty + name + price + total + "\n")
+
+                    // 🔹 Modifiers (indented, max width safe)
+                    if (!item.modifiersJson.isNullOrBlank()) {
+                        try {
+                            val modifiers = item.modifiersJson
+                                .removePrefix("[")
+                                .removeSuffix("]")
+                                .split(",")
+                                .map { it.trim().replace("\"", "") }
+                                .filter { it.isNotBlank() }
+
+                            modifiers.forEach { mod ->
+                                append("    + ${mod.take(26)}\n")
+                            }
+                        } catch (_: Exception) {
+                            append("    + ${item.modifiersJson.take(26)}\n")
+                        }
+                    }
+
+                    // 🔹 Note (indented)
+                    if (!item.note.isNullOrBlank()) {
+                        append("    • ${item.note.take(26)}\n")
+                    }
+                }
             }
+
 
             "$header\n$divider\n$lines"
         }
@@ -61,9 +99,7 @@ object ReceiptFormatter {
                 """
 ------------------------------
 $headerBlock
-------------------------------
-$headerBlock
-------------------------------
+----------------------------
 $itemsBlock
 ------------------------------
 ${totalLine("Item Total", order.itemTotal)}
@@ -108,13 +144,51 @@ Thank You!
 
             val divider = "-".repeat(LINE_WIDTH)
 
-            val lines = order.items.joinToString("\n") { item ->
-                val qty = item.quantity.toString().padEnd(4)
-                val name = item.name.take(26).padEnd(26)
-                val price = format(item.price).padStart(8)
-                val total = format(item.subtotal).padStart(10)
-                qty + name + price + total
+//            val lines = order.items.joinToString("\n") { item ->
+//                val qty = item.quantity.toString().padEnd(4)
+//                val name = item.name.take(26).padEnd(26)
+//                val price = format(item.price).padStart(8)
+//                val total = format(item.subtotal).padStart(10)
+//                qty + name + price + total
+//            }
+
+            val lines = buildString {
+
+                order.items.forEach { item ->
+
+                    val qty = item.quantity.toString().padEnd(4)
+                    val name = item.name.take(26).padEnd(26)
+                    val price = format(item.price).padStart(8)
+                    val total = format(item.subtotal).padStart(10)
+
+                    // 🔹 Main line
+                    append(qty + name + price + total + "\n")
+
+                    // 🔹 Modifiers (if any)
+                    if (!item.modifiersJson.isNullOrBlank()) {
+                        try {
+                            val modifiers = item.modifiersJson
+                                .removePrefix("[")
+                                .removeSuffix("]")
+                                .split(",")
+                                .map { it.trim().replace("\"", "") }
+                                .filter { it.isNotBlank() }
+
+                            modifiers.forEach { mod ->
+                                append("    + $mod\n")
+                            }
+                        } catch (_: Exception) {
+                            append("    + ${item.modifiersJson}\n")
+                        }
+                    }
+
+                    // 🔹 Note (if any)
+                    if (!item.note.isNullOrBlank()) {
+                        append("    • ${item.note}\n")
+                    }
+                }
             }
+
 
             "$header\n$divider\n$lines"
         }
@@ -148,9 +222,6 @@ Thank You!
 
 
 
-    fun billing83(order: PrintOrder, title: String = "FOOD APP"): String {
-        return billingWithWidth(order, title, lineWidth = 48) // 48 chars for 83mm
-    }
 
 
     // -----------------------------

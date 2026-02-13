@@ -55,8 +55,13 @@ data class PosOrderMasterEntity(
     // =====================================================
     // PAYMENT
     // =====================================================
-    val paymentType: String,        // CASH | CARD | UPI
-    val paymentStatus: String,      // PAID | PENDING
+
+    val paymentMode: String,        // CASH | CARD | UPI | CREDIT | MIXED
+
+    val paymentStatus: String,      // PAID | PARTIAL | CREDIT
+
+    val paidAmount: Double = 0.0,   // Amount received now
+    val dueAmount: Double = 0.0,    // Remaining amount
 
     // =====================================================
     // ORDER STATE

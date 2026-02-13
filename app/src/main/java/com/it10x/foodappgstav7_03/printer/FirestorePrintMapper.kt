@@ -16,7 +16,9 @@ object FirestorePrintMapper {
                 name = item.name,
                 quantity = item.quantity,
                 price = toDouble(item.price),
-                subtotal = toDouble(item.itemSubtotal)
+                subtotal = toDouble(item.itemSubtotal),
+                note = item.note ?: "",
+                modifiersJson = item.modifiersJson ?: ""
             )
         }
 

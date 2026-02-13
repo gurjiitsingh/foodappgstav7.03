@@ -21,7 +21,9 @@ object PrintOrderBuilder {
                 name = item.name,
                 quantity = item.quantity,
                 price = item.basePrice,
-                subtotal = item.itemSubtotal
+                subtotal = item.itemSubtotal,
+                note = item.note ?: "",
+                modifiersJson = item.modifiersJson ?: ""
             )
         }
 

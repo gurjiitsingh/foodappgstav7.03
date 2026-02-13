@@ -657,7 +657,7 @@ fun PosScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(start = 140.dp, end = 190.dp) // 👈 match product panel
+                    .fillMaxWidth()
                     .wrapContentHeight()
                     .background(MaterialTheme.colorScheme.surface)
                     .zIndex(60f)

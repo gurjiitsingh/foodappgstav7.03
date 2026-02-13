@@ -128,16 +128,19 @@ class BillViewModel(
                         }
 
                         BillingItemUi(
-                            id = first.id, // IMPORTANT: use KOT item id, not productId
+                            id = first.id,
+                            productId = first.productId,
                             name = first.name,
                             basePrice = first.basePrice,
+                            taxRate = first.taxRate,
                             quantity = quantity,
+                            finalTotal = itemTotal + taxTotal,
                             itemtotal = itemTotal,
                             taxTotal = taxTotal,
-                            finalTotal = itemTotal + taxTotal,
-                            note = first.note,
-                            modifiersJson = first.modifiersJson
+                            note = first.note ?: "",
+                            modifiersJson = first.modifiersJson ?: ""
                         )
+
                     }
 
 
@@ -227,7 +230,7 @@ class BillViewModel(
                 taxTotal = taxTotal,
                 discountTotal = discount,
                 grandTotal = (itemSubtotal + taxTotal - discount).coerceAtLeast(0.0),
-                paymentType = paymentType,
+                paymentMode = paymentType,
                 paymentStatus = "PAID",
                 orderStatus = "COMPLETED",
                 deviceId = "POS",
@@ -349,21 +352,69 @@ class BillViewModel(
 
     // file: BillViewModel.kt (inside the class)
     fun updateItemQuantity(itemId: String, newQty: Int) {
+
         viewModelScope.launch {
+
             val qty = newQty.coerceAtLeast(0)
-            Log.d("EDIT", "Edit qty in bill itemId=$itemId qty=$qty")
 
-            kotItemDao.updateQuantity(itemId, qty)
+            Log.d("EDIT_DEBUG", "Requested update itemId=$itemId newQty=$qty")
 
-//            val updated = kotItemDao.getItemQtyById(itemId)
-//            Log.d("EDIT", "After update DB has qty=${updated}")
+            val targetUi = _uiState.value.items
+                .find { it.id == itemId }
 
-            // optionally reload UI here
-            // refreshCart()
+            if (targetUi == null) {
+                Log.d("EDIT_DEBUG", "❌ targetUi NOT FOUND")
+                return@launch
+            }
+
+            Log.d("EDIT_DEBUG", "✅ targetUi found name=${targetUi.name} qty=${targetUi.quantity}")
+
+            val allItems = kotItemDao.getItemsForTableSync(tableId)
+
+            Log.d("EDIT_DEBUG", "DB items count=${allItems.size}")
+
+            val groupedItems = allItems.filter {
+                it.productId == targetUi.productId &&
+                        it.basePrice == targetUi.basePrice &&
+                        it.taxRate == targetUi.taxRate &&
+                        (it.note ?: "") == targetUi.note &&
+                        (it.modifiersJson ?: "") == targetUi.modifiersJson &&
+                        it.status == "DONE"
+            }
+
+            Log.d("EDIT_DEBUG", "Grouped items found=${groupedItems.size}")
+            groupedItems.forEach {
+                Log.d("EDIT_DEBUG", "Match -> id=${it.id} qty=${it.quantity}")
+            }
+
+            // Delete
+            groupedItems.forEach {
+                kotItemDao.deleteItemById(it.id)
+            }
+
+            Log.d("EDIT_DEBUG", "Deleted grouped items")
+
+            if (qty > 0 && groupedItems.isNotEmpty()) {
+
+                val template = groupedItems.first()
+
+                kotItemDao.insert(
+                    template.copy(
+                        id = UUID.randomUUID().toString(),
+                        quantity = qty
+                    )
+                )
+
+                Log.d("EDIT_DEBUG", "Inserted new row qty=$qty")
+            }
+
+            val after = kotItemDao.getItemsForTableSync(tableId)
+            Log.d("EDIT_DEBUG", "After update DB total qty = ${after.sumOf { it.quantity }}")
         }
-
-
     }
+
+
+
 
 
 }

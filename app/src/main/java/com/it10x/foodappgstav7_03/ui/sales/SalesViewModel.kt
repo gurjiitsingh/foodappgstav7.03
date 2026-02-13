@@ -86,7 +86,7 @@ class SalesViewModel(
             Log.i(TAG, "All PAID orders count=${sales.size}")
 
             val total = sales.sumOf { it.grandTotal }               // simple total
-            val paymentBreakup = sales.groupBy { it.paymentType }
+            val paymentBreakup = sales.groupBy { it.paymentMode }
                 .mapValues { it.value.sumOf { o -> o.grandTotal } }
             val taxTotal = sales.sumOf { it.taxTotal }
             val discountTotal = sales.sumOf { it.discountTotal }

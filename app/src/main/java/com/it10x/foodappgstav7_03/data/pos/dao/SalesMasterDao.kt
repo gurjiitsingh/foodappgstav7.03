@@ -48,12 +48,12 @@ interface SalesMasterDao {
     // PAYMENT BREAKUP
     // ======================
     @Query("""
-    SELECT paymentType, IFNULL(SUM(grandTotal),0) as total
+    SELECT paymentMode, IFNULL(SUM(grandTotal),0) as total
     FROM pos_order_master
     WHERE orderStatus = 'PAID'
       AND paymentStatus = 'PAID'
       AND createdAt BETWEEN :from AND :to
-    GROUP BY paymentType
+    GROUP BY paymentMode
     """)
     suspend fun getPaymentBreakup(
         from: Long,
@@ -90,7 +90,7 @@ interface SalesMasterDao {
 
 
 data class PaymentBreakup(
-    val paymentType: String,
+    val paymentMode: String,
     val total: Double
 )
 

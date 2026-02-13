@@ -34,7 +34,7 @@ FOOD APP 2
 Order No : ${order.srno}
 Type     : ${order.orderType}
 Table    : ${order.tableNo ?: "-"}
-Payment  : ${order.paymentType}
+Payment  : ${order.paymentMode}
 Date     : ${sdf.format(Date(order.createdAt))}
 ------------------------------
 QTY ITEM             PRICE TOTAL

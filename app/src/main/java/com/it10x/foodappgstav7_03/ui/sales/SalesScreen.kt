@@ -180,7 +180,7 @@ private fun SalesOrderRow(order: PosOrderMasterEntity) {
                 Text("₹ %.2f".format(order.grandTotal))
             }
             Spacer(Modifier.height(4.dp))
-            Text("${order.orderType} • ${order.paymentType}",
+            Text("${order.orderType} • ${order.paymentMode}",
                 style = MaterialTheme.typography.bodySmall)
             Text(time, style = MaterialTheme.typography.bodySmall)
         }

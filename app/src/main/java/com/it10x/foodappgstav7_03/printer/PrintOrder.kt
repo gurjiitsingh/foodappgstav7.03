@@ -46,5 +46,8 @@ data class PrintItem(
     val name: String,
     val quantity: Int,
     val price: Double = 0.0,
-    val subtotal: Double = 0.0
+    val subtotal: Double = 0.0,
+    val note: String?,
+    val modifiersJson: String?,
+
 )

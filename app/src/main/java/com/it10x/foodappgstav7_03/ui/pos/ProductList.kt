@@ -75,7 +75,7 @@ private fun ParentProductCard(
             .sumOf { it.quantity }
     }
 
-    val productBg = MaterialTheme.colorScheme.surface
+    val productBg = MaterialTheme.colorScheme.background//MaterialTheme.colorScheme.surface
     val productText = MaterialTheme.colorScheme.onSurface
 
     val addBg = MaterialTheme.colorScheme.primary

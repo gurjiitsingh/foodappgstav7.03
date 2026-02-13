@@ -107,9 +107,11 @@ AND status = 'PENDING'
     @Query("UPDATE pos_kot_items SET quantity = :qty WHERE productId = :id")
     suspend fun updateQuantity(id: String, qty: Int)
 
-    @Query("DELETE FROM pos_kot_items WHERE productId = :itemId")
-    suspend fun deleteItemById(itemId: String)
+//    @Query("DELETE FROM pos_kot_items WHERE productId = :itemId")
+//    suspend fun deleteItemById(itemId: String)
 
+    @Query("DELETE FROM pos_kot_items WHERE id = :id")
+    suspend fun deleteItemById(id: String)
     // -------------------------
 // PRINT FLAG
 // -------------------------

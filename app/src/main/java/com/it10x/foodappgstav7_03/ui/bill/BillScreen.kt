@@ -115,11 +115,34 @@ fun BillScreen(
                                 )
                             }
 
-                            Text(
-                                text = item.name,
-                                maxLines = 1,
-                                modifier = Modifier.padding(start = 4.dp)
-                            )
+                            Column {
+
+                                // 🔹 Item Name
+                                Text(
+                                    text = item.name,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+
+                                // 🔹 Modifiers
+                                val modifiers = parseModifiers(item.modifiersJson)
+                                modifiers.forEach { mod ->
+                                    Text(
+                                        text = "+ $mod",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray
+                                    )
+                                }
+
+                                // 🔹 Note
+                                if (item.note.isNotBlank()) {
+                                    Text(
+                                        text = item.note,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
                         }
 
                         // MIDDLE: qty + edit button
@@ -395,6 +418,17 @@ private fun AddressField(
     )
 }
 
+fun parseModifiers(json: String): List<String> {
+    return try {
+        json.removePrefix("[")
+            .removeSuffix("]")
+            .split(",")
+            .map { it.trim().replace("\"", "") }
+            .filter { it.isNotBlank() }
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
 
 @Composable
 fun EditQuantityDialog(
