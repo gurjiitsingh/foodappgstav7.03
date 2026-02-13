@@ -40,7 +40,7 @@ fun BillDialog(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.96f)
+                .fillMaxWidth(1f)
                 .wrapContentHeight()
                 .padding(8.dp),
             shape = MaterialTheme.shapes.medium,

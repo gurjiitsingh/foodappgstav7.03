@@ -20,6 +20,7 @@ import com.it10x.foodappgstav7_03.data.pos.entities.PosCartEntity
 import com.it10x.foodappgstav7_03.ui.theme.PosError
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun CartRow(
@@ -34,22 +35,11 @@ fun CartRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 6.dp),
+            .padding(vertical = 0.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        // 🗑️ Delete button
-        IconButton(
-            onClick = { cartViewModel.removeFromCart(item.productId, tableNo) },
-            modifier = Modifier.size(32.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Delete Item",
-                tint = Color(0xFFDC2626)
-            )
-        }
-
+        // ✏️ Edit
         IconButton(
             onClick = { showNoteDialog = true },
             modifier = Modifier.size(32.dp)
@@ -61,54 +51,43 @@ fun CartRow(
             )
         }
 
-
-        // 🧾 Item name + price
-        // 🧾 Item name + note + price
-        Row(
+        // 🧾 NAME COLUMN (Flexible — Shrinks First)
+        Column(
             modifier = Modifier
-                .weight(2.0f)
-                .padding(start = 4.dp, end = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .weight(1f)   // ✅ only this shrinks
+                .padding(start = 4.dp, end = 6.dp)
         ) {
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-
-                Text(
-                    text = item.name,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp,
-                    color = Color(0xFFE0E0E0)
-                )
-
-                item.note?.let { note ->
-                    if (note.isNotBlank()) {
-                        Text(
-                            text = "📝 $note",
-                            fontSize = 12.sp,
-                            color = Color(0xFFFFB703)
-                        )
-                    }
-                }
-            }
 
             Text(
-                text = "₹${item.basePrice}",
-                fontSize = 13.sp,
-                color = Color(0xFFBDBDBD)
+                text = item.name,
+                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp,
+                color = Color(0xFFE0E0E0),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis  // 🔥 Prevent overlap
             )
+
+            item.note?.let { note ->
+                if (note.isNotBlank()) {
+                    Text(
+                        text = "📝 $note",
+                        fontSize = 12.sp,
+                        color = Color(0xFFFFB703),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
 
-
-        // ➕ Quantity controls (more readable)
+        // ➕ QTY (Fixed Width — Never Shrinks)
         Row(
             modifier = Modifier
-                .weight(0.55f)
-                .padding(horizontal = 4.dp),
+                .width(110.dp),   // ✅ fixed width
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
+
             IconButton(
                 onClick = { cartViewModel.decrease(item.productId, tableNo) },
                 modifier = Modifier
@@ -119,11 +98,10 @@ fun CartRow(
             }
 
             Text(
-                text = item.quantity.toString(), // 🔹 no leading zero
-                modifier = Modifier.padding(horizontal = 14.dp), // 🔹 added more spacing between − & +
+                text = item.quantity.toString(),
                 fontWeight = FontWeight.Medium,
                 fontSize = 15.sp,
-                color = Color(0xFFEEEEEE) // light gray for qty
+                color = Color(0xFFEEEEEE)
             )
 
             IconButton(
@@ -136,62 +114,39 @@ fun CartRow(
             }
         }
 
-        // 🍳 Bill / Kitchen buttons
+        Spacer(Modifier.width(15.dp))
+
+        // 🍳 ACTION BUTTONS (Fixed Width)
         Row(
-            modifier = Modifier
-                .weight(0.9f)
-                .fillMaxWidth(),
+            modifier = Modifier.width(120.dp),   // ✅ fixed
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End
         ) {
+
             Button(
                 onClick = { onCartActionDirectMoveToBill(item, true) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.SoupKitchen,
-                    contentDescription = "Kitchen",
-                    tint = Color.White,
-                    modifier = Modifier.size(15.dp)
-                )
+                Icon(Icons.Default.SoupKitchen, null, Modifier.size(15.dp))
                 Spacer(Modifier.width(2.dp))
-                Icon(
-                    imageVector = Icons.Default.Print,
-                    contentDescription = "Print",
-                    tint = Color.White,
-                    modifier = Modifier.size(15.dp)
-                )
-                Spacer(Modifier.width(2.dp))
-                Icon(
-                    imageVector = Icons.Default.Receipt,
-                    contentDescription = "Bill",
-                    tint = Color.White,
-                    modifier = Modifier.size(15.dp)
-                )
+
+                Icon(Icons.Default.Receipt, null, Modifier.size(15.dp))
             }
 
             Spacer(Modifier.width(4.dp))
 
             OutlinedButton(
                 onClick = { onCartActionDirectMoveToBill(item, false) },
-                border = BorderStroke(1.dp, PosError),
                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Receipt,
-                    contentDescription = "Bill Only",
-                    tint = PosError,
-                    modifier = Modifier.size(15.dp)
-                )
+                Icon(Icons.Default.Receipt, null, Modifier.size(15.dp))
             }
         }
     }
 
+    Spacer(Modifier.height(3.dp))
     Divider(color = Color.LightGray.copy(alpha = 0.25f))
+    Spacer(Modifier.height(3.dp))
 
     if (showNoteDialog) {
 

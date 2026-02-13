@@ -772,7 +772,7 @@ fun PosScreen(
                         if (isPhone)
                             Modifier.fillMaxWidth(1f) // 📱 full width on phone
                         else
-                            Modifier.fillMaxWidth(0.96f) // 💻 slightly narrower on tablet
+                            Modifier.fillMaxWidth(1f) // 💻 slightly narrower on tablet
                     )
                     .padding(8.dp),
                 shape = MaterialTheme.shapes.medium,

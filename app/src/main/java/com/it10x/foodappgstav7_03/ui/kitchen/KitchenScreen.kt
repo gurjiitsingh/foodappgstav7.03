@@ -58,8 +58,8 @@ fun KitchenScreen(
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(0.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         // ✅ LEFT: Item list
         Column(
@@ -97,7 +97,7 @@ fun KitchenScreen(
                 .weight(0.3f)
                 .fillMaxHeight()
                 .padding(8.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -121,7 +121,7 @@ fun KitchenScreen(
                 )
             }
 
-            Spacer(Modifier.height(8.dp))
+
 
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
