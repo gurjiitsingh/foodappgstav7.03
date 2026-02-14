@@ -224,19 +224,7 @@ fun BillScreen(
 // =====================================================
 // PAYMENT HANDLER
 // =====================================================
-//private fun onPaymentClick(
-//    viewModel: BillViewModel,
-//    paymentType: PaymentType,
-//    address: DeliveryAddressUiState,
-//    onRequireAddress: () -> Unit,
-//    onProceed: (PaymentType) -> Unit
-//) {
-//    if (viewModel.orderTypePublic == "DELIVERY" && !isAddressValid(address)) {
-//        onRequireAddress()
-//    } else {
-//        onProceed(paymentType)
-//    }
-//}
+
 
 private fun onPaymentClick(
 

@@ -35,6 +35,11 @@ fun LocalOrderDetailScreen(
 
     var showEditDialog by remember { mutableStateOf(false) }
 
+    val totalPaid by viewModel.totalPaid.collectAsState()
+    val due by viewModel.dueAmount.collectAsState()
+    val status by viewModel.paymentStatus.collectAsState()
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -60,7 +65,7 @@ fun LocalOrderDetailScreen(
         order?.let { o ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF616161))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF000000))
             ) {
                 Row(
                     modifier = Modifier
@@ -74,24 +79,40 @@ fun LocalOrderDetailScreen(
                             .weight(1f)
                             .padding(end = 12.dp)
                     ) {
-                        Text("Order Info", fontWeight = FontWeight.Bold)
-                        Spacer(Modifier.height(6.dp))
 
-                        Text("Order #: ${o.srno}")
+                       // Text("Order Info", fontWeight = FontWeight.Bold)
                         Text(
                             rememberDateFormatter().format(Date(o.createdAt)),
                             style = MaterialTheme.typography.bodySmall,
                             color = Color.White
                         )
-
                         Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(6.dp)
+                        ) {
 
-                        Text("Type: ${o.orderType}")
-                        o.tableNo?.let {
-                            Text("Table: $it")
+
+                            Text("Order #: ${o.srno}")
+
+
+
+                            Text(", ${o.orderType}")
+                            o.tableNo?.let {
+                                Text(", $it")
+                            }
                         }
 
+
+
+
                         Spacer(Modifier.height(6.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(6.dp)
+                        ) {
 
                         Text("Payment: ${o.paymentMode}")
                         Text(
@@ -104,7 +125,7 @@ fun LocalOrderDetailScreen(
                                 "CANCELLED" -> Color(0xFFD32F2F)
                                 else -> Color.DarkGray
                             }
-                        )
+                        )}
                         Text(
                             "Sync Status: ${o.syncStatus}",
                             fontWeight = FontWeight.Medium,
@@ -166,6 +187,9 @@ fun LocalOrderDetailScreen(
             tax = tax,
             discount = discount,
             grandTotal = grandTotal,
+            totalPaid = totalPaid,   // <-- pass collected state
+            due = due,               // <-- pass collected state
+            status = status,         // <-- pass collected state
             onEditClick = { showEditDialog = true }
         )
     }
@@ -276,7 +300,10 @@ fun OrderTotals(
     tax: Double,
     discount: Double,
     grandTotal: Double,
-    onEditClick: () -> Unit = {} // <-- default so old callers still compile
+    totalPaid: Double,        // <-- new
+    due: Double,              // <-- new
+    status: String,           // <-- new
+    onEditClick: () -> Unit = {}
 ) {
     Column {
         TotalRow("Subtotal", subtotal)
@@ -286,9 +313,28 @@ fun OrderTotals(
             TotalRow("Discount", -discount)
         }
 
+        if (totalPaid > 0) {
+            TotalRow("Paid Amount", totalPaid)
+        }
+
+        if (due > 0) {
+            TotalRow("Due Amount", due)
+        }
+
+        Text(
+            "Payment Status: $status",
+            fontWeight = FontWeight.Medium,
+            color = when (status) {
+                "PAID" -> Color(0xFF2E7D32)
+                "PARTIAL" -> Color(0xFFFFA000)
+                "CREDIT" -> Color(0xFFD32F2F)
+                else -> Color.DarkGray
+            },
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+
         Divider(Modifier.padding(vertical = 4.dp))
 
-        // Grand total with edit button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -304,6 +350,7 @@ fun OrderTotals(
         }
     }
 }
+
 
 @Composable
 fun TotalRow(label: String, value: Double, bold: Boolean = false) {

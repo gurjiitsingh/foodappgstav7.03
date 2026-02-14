@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.it10x.foodappgstav7_03.ui.payment.PaymentInput
 
 @Composable
 fun BillDialogPhone(
@@ -75,10 +76,22 @@ fun BillDialogPhone(
                 BillScreen(
                     viewModel = billViewModel,
                     onPayClick = { paymentType ->
-                        billViewModel.payBill(paymentType.name)
+
+                        val totalAmount = billViewModel.uiState.value.total
+
+                        billViewModel.payBill(
+                            listOf(
+                                PaymentInput(
+                                    mode = paymentType.name,
+                                    amount = totalAmount
+                                )
+                            )
+                        )
+
                         onDismiss()
                     }
                 )
+
 
                 // ---------- ACTIONS ----------
                 Row(
@@ -242,7 +255,17 @@ fun BillDialogPhone(
                 ) {
                     // Cash + Card
                     Button(
-                        onClick = { billViewModel.payBill("CASH"); onDismiss() },
+                        onClick = {
+                            billViewModel.payBill(
+                                listOf(
+                                    PaymentInput(
+                                        mode = "CASH",
+                                        amount = billViewModel.uiState.value.total
+                                    )
+                                )
+                            )
+                            onDismiss()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(40.dp),
@@ -253,7 +276,14 @@ fun BillDialogPhone(
                     ) { Text("💵 Cash", fontSize = 14.sp) }
 
                     Button(
-                        onClick = { billViewModel.payBill("CARD"); onDismiss() },
+                        onClick = {
+                            billViewModel.payBill(
+                                listOf(
+                                    PaymentInput("CARD", billViewModel.uiState.value.total)
+                                )
+                            )
+                            onDismiss()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(40.dp),
@@ -264,7 +294,17 @@ fun BillDialogPhone(
                     ) { Text("💳 Card", fontSize = 14.sp) }
 
                     Button(
-                        onClick = { billViewModel.payBill("UPI"); onDismiss() },
+                        onClick = {
+                            billViewModel.payBill(
+                                listOf(
+                                    PaymentInput(
+                                        mode = "UPI",
+                                        amount = billViewModel.uiState.value.total
+                                    )
+                                )
+                            )
+                            onDismiss()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(40.dp),
@@ -275,7 +315,17 @@ fun BillDialogPhone(
                     ) { Text("📱 UPI", fontSize = 14.sp) }
 
                     Button(
-                        onClick = { billViewModel.payBill("WALLET"); onDismiss() },
+                        onClick = {
+                            billViewModel.payBill(
+                                listOf(
+                                    PaymentInput(
+                                        mode = "WALLET",
+                                        amount = billViewModel.uiState.value.total
+                                    )
+                                )
+                            )
+                            onDismiss()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(40.dp),

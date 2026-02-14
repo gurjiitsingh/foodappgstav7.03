@@ -22,6 +22,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.it10x.foodappgstav7_03.ui.bill.BillViewModel
 import com.it10x.foodappgstav7_03.ui.bill.BillViewModelFactory
+import com.it10x.foodappgstav7_03.ui.payment.PaymentInput
 
 @Composable
 fun BillDialog(
@@ -33,6 +34,8 @@ fun BillDialog(
     selectedTableName: String
 ) {
     if (!showBill || sessionId == null) return
+
+
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -78,14 +81,26 @@ fun BillDialog(
                     )
 
                     Divider(thickness = 1.dp, color = Color.Gray.copy(alpha = 0.4f))
-
                     BillScreen(
                         viewModel = billViewModel,
                         onPayClick = { paymentType ->
-                            billViewModel.payBill(paymentType.name)
+
+                            val totalAmount = billViewModel.uiState.value.total
+
+                            billViewModel.payBill(
+                                listOf(
+                                    PaymentInput(
+                                        mode = paymentType.name,
+                                        amount = totalAmount
+                                    )
+                                )
+                            )
+
                             onDismiss()
                         }
                     )
+
+
                 }
 
                 // ========= RIGHT COLUMN (Discount + Payment Buttons) =========
@@ -106,10 +121,11 @@ fun BillDialog(
                         )
                     )
 
+
                     val discountFlat = remember { mutableStateOf("") }
                     val discountPercent = remember { mutableStateOf("") }
                     var activeField by remember { mutableStateOf("FLAT") }
-
+                    var showRemainingOptions by remember { mutableStateOf(false) }
 
 
                     // ---------------- DISCOUNT SECTION ----------------
@@ -156,12 +172,16 @@ fun BillDialog(
                                 .weight(1f)
                                 .height(42.dp)
                                 .background(
-                                    if (activeField == "FLAT") Color(0xFF424242) else Color(0xFF616161),
+                                    if (activeField == "FLAT") Color(0xFF424242) else Color(
+                                        0xFF616161
+                                    ),
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .border(
                                     1.dp,
-                                    if (activeField == "FLAT") Color(0xFF90CAF9) else Color(0xFFBDBDBD),
+                                    if (activeField == "FLAT") Color(0xFF90CAF9) else Color(
+                                        0xFFBDBDBD
+                                    ),
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .clickable {
@@ -183,12 +203,16 @@ fun BillDialog(
                                 .weight(1f)
                                 .height(42.dp)
                                 .background(
-                                    if (activeField == "PERCENT") Color(0xFF424242) else Color(0xFF616161),
+                                    if (activeField == "PERCENT") Color(0xFF424242) else Color(
+                                        0xFF616161
+                                    ),
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .border(
                                     1.dp,
-                                    if (activeField == "PERCENT") Color(0xFF90CAF9) else Color(0xFFBDBDBD),
+                                    if (activeField == "PERCENT") Color(0xFF90CAF9) else Color(
+                                        0xFFBDBDBD
+                                    ),
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .clickable {
@@ -204,9 +228,6 @@ fun BillDialog(
                             )
                         }
                     }
-
-
-
 
 
                     // ---------- CUSTOM NUM PAD ----------
@@ -228,22 +249,34 @@ fun BillDialog(
                                         when (label) {
                                             "←" -> {
                                                 if (activeField == "FLAT" && discountFlat.value.isNotEmpty()) {
-                                                    discountFlat.value = discountFlat.value.dropLast(1)
-                                                    billViewModel.setFlatDiscount(discountFlat.value.toDoubleOrNull() ?: 0.0)
+                                                    discountFlat.value =
+                                                        discountFlat.value.dropLast(1)
+                                                    billViewModel.setFlatDiscount(
+                                                        discountFlat.value.toDoubleOrNull() ?: 0.0
+                                                    )
                                                 } else if (activeField == "PERCENT" && discountPercent.value.isNotEmpty()) {
-                                                    discountPercent.value = discountPercent.value.dropLast(1)
-                                                    billViewModel.setPercentDiscount(discountPercent.value.toDoubleOrNull() ?: 0.0)
+                                                    discountPercent.value =
+                                                        discountPercent.value.dropLast(1)
+                                                    billViewModel.setPercentDiscount(
+                                                        discountPercent.value.toDoubleOrNull()
+                                                            ?: 0.0
+                                                    )
                                                 }
                                             }
 
                                             else -> {
                                                 if (activeField == "FLAT") {
                                                     discountFlat.value += label
-                                                    billViewModel.setFlatDiscount(discountFlat.value.toDoubleOrNull() ?: 0.0)
+                                                    billViewModel.setFlatDiscount(
+                                                        discountFlat.value.toDoubleOrNull() ?: 0.0
+                                                    )
                                                     discountPercent.value = ""
                                                 } else {
                                                     discountPercent.value += label
-                                                    billViewModel.setPercentDiscount(discountPercent.value.toDoubleOrNull() ?: 0.0)
+                                                    billViewModel.setPercentDiscount(
+                                                        discountPercent.value.toDoubleOrNull()
+                                                            ?: 0.0
+                                                    )
                                                     discountFlat.value = ""
                                                 }
                                             }
@@ -267,9 +300,120 @@ fun BillDialog(
 
                     Divider(Modifier.padding(vertical = 4.dp))
 
+
+                    // ---------- CREDIT OR PAYLATER ----------
+
+                    var creditAmount by remember { mutableStateOf("") } // store as String
+                    var partialPaidAmount by remember { mutableStateOf(0.0) } // track paid amount so far
+                    val totalAmount = billViewModel.uiState.value.total
+                    val remainingAmount = (totalAmount - partialPaidAmount).coerceAtLeast(0.0)
+                    var isCreditSelected by remember { mutableStateOf(false) }
+
+//                    var partialPaidAmount by remember { mutableStateOf(0.0) }
+//                    val totalAmount = billViewModel.uiState.value.total
+//                    val remainingAmount = (totalAmount - partialPaidAmount).coerceAtLeast(0.0)
+//                    var showRemainingOptions by remember { mutableStateOf(false) }
+
+// Track used payment methods to prevent duplicates
+                    val usedPaymentModes = remember { mutableStateListOf<String>() }
+
+
+                    Spacer(Modifier.height(6.dp))
+                    Text("Other Options", style = MaterialTheme.typography.titleSmall)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (isCreditSelected) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                OutlinedTextField(
+                                    value = if (creditAmount.isEmpty()) "0" else creditAmount,
+                                    onValueChange = {}, // input via NumPad only
+                                    label = { Text("Credit Amount") },
+                                    singleLine = true,
+                                    readOnly = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                // Custom NumPad
+                                NumPad { label ->
+                                    when (label) {
+                                        "←" -> if (creditAmount.isNotEmpty()) creditAmount =
+                                            creditAmount.dropLast(1)
+
+                                        "." -> if (!creditAmount.contains(".")) creditAmount += label
+                                        else -> creditAmount += label
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                Button(
+                                    onClick = {
+                                        val amount = creditAmount.toDoubleOrNull() ?: 0.0
+                                        if (amount <= 0.0) return@Button
+
+                                        partialPaidAmount += amount
+                                        billViewModel.payBill(listOf(PaymentInput("CREDIT", amount)))
+                                        usedPaymentModes.add("CREDIT")
+                                        creditAmount = ""
+
+                                        if (partialPaidAmount >= totalAmount) {
+                                            onDismiss()
+                                        } else {
+                                            showRemainingOptions = true
+                                            isCreditSelected = false
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth().height(38.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107), contentColor = Color.Black)
+                                ) {
+                                    Text("Confirm Credit", fontSize = 13.sp)
+                                }
+
+                            }
+                        }
+
+                        // ---------- Buttons ----------
+                        // Credit Button
+                        Button(
+                            onClick = { isCreditSelected = true },
+                            modifier = Modifier.weight(1f).height(38.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107), contentColor = Color.Black)
+                        ) { Text("💳 Credit", fontSize = 13.sp) }
+
+                        // Pay Later Button
+                        Button(
+                            onClick = {
+                                if (remainingAmount > 0) {
+                                    billViewModel.payBill(listOf(PaymentInput("PAY_LATER", remainingAmount)))
+                                    usedPaymentModes.add("PAY_LATER")
+                                }
+                                onDismiss()
+                            },
+                            modifier = Modifier.weight(1f).height(38.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9E9E9E), contentColor = Color.White)
+                        ) { Text("🕒 Pay Later", fontSize = 13.sp) }
+                    }
+
+
+                    if (showRemainingOptions && remainingAmount > 0) {
+                        Spacer(Modifier.height(8.dp))
+                        Text("Pay Remaining: ₹$remainingAmount", style = MaterialTheme.typography.titleSmall)
+                        Text("Using following methods")
+
+                    }
+
                     // ---------- PAYMENT BUTTONS (Compact, Pastel Colors) ----------
                     Text("Select Payment", style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(6.dp))
+
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -280,59 +424,151 @@ fun BillDialog(
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { billViewModel.payBill("CASH"); onDismiss() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(38.dp),
+                                onClick = {
+                                    val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
+                                    billViewModel.payBill(listOf(PaymentInput("CASH", amountToPay)))
+                                    partialPaidAmount += amountToPay
+                                    onDismiss()
+                                },
+                                modifier = Modifier.weight(1f).height(38.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF4CAF50),      // POS green
+                                    containerColor = Color(0xFF4CAF50),  // green
                                     contentColor = Color.White
                                 )
                             ) { Text("💵 Cash", fontSize = 13.sp) }
 
                             Button(
-                                onClick = { billViewModel.payBill("CARD"); onDismiss() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(38.dp),
+                                onClick = {
+                                    val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
+                                    billViewModel.payBill(listOf(PaymentInput("CARD", amountToPay)))
+                                    partialPaidAmount += amountToPay
+                                    onDismiss()
+                                },
+                                modifier = Modifier.weight(1f).height(38.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF1976D2),      // POS blue
+                                    containerColor = Color(0xFF1976D2),  // blue
                                     contentColor = Color.White
                                 )
                             ) { Text("💳 Card", fontSize = 13.sp) }
                         }
 
-                        // 📱 UPI + 💰 WALLET
+// 📱 UPI + 💰 WALLET
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Button(
-                                onClick = { billViewModel.payBill("UPI"); onDismiss() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(38.dp),
+                                onClick = {
+                                    val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
+                                    billViewModel.payBill(listOf(PaymentInput("UPI", amountToPay)))
+                                    partialPaidAmount += amountToPay
+                                    onDismiss()
+                                },
+                                modifier = Modifier.weight(1f).height(38.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFFF9800),      // POS orange
+                                    containerColor = Color(0xFFFF9800),  // orange
                                     contentColor = Color.White
                                 )
                             ) { Text("📱 UPI", fontSize = 13.sp) }
 
                             Button(
-                                onClick = { billViewModel.payBill("WALLET"); onDismiss() },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(38.dp),
+                                onClick = {
+                                    val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
+                                    billViewModel.payBill(listOf(PaymentInput("WALLET", amountToPay)))
+                                    partialPaidAmount += amountToPay
+                                    onDismiss()
+                                },
+                                modifier = Modifier.weight(1f).height(38.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF9C27B0),      // POS purple
+                                    containerColor = Color(0xFF9C27B0),  // purple
                                     contentColor = Color.White
                                 )
                             ) { Text("💰 Wallet", fontSize = 13.sp) }
                         }
+
                     }
+
+
+
+// ---------- SHOW OTHER PAYMENT OPTIONS FOR REMAINING ----------
+
+
+//                    if (showRemainingOptions && remainingAmount > 0) {
+//                        Spacer(Modifier.height(8.dp))
+//                        Text("Pay Remaining: ₹$remainingAmount", style = MaterialTheme.typography.titleSmall)
+//
+//                        Row(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+//                        ) {
+//                            Button(onClick = {
+//                                billViewModel.payBill(listOf(PaymentInput("CASH", remainingAmount)))
+//                                onDismiss()
+//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("Cash") }
+//
+//                            Button(onClick = {
+//                                billViewModel.payBill(listOf(PaymentInput("CARD", remainingAmount)))
+//                                onDismiss()
+//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("Card") }
+//
+//                            Button(onClick = {
+//                                billViewModel.payBill(listOf(PaymentInput("UPI", remainingAmount)))
+//                                onDismiss()
+//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("UPI") }
+//
+//                            Button(onClick = {
+//                                billViewModel.payBill(listOf(PaymentInput("WALLET", remainingAmount)))
+//                                onDismiss()
+//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("Wallet") }
+//                        }
+//                    }
+
+
+
+
+
 
                 }
 
+            }
+        }
+    }
+}
+
+
+@Composable
+fun NumPad(
+    onInput: (String) -> Unit
+) {
+    val buttons = listOf(
+        listOf("1", "2", "3", "4", "5", "6"),
+        listOf("7", "8", "9", "0", ".", "←")
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        buttons.forEach { row ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 1.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                row.forEach { label ->
+                    Button(
+                        onClick = { onInput(label) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(32.dp),
+                        contentPadding = PaddingValues(vertical = 2.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFE0E0E0),
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(label, fontSize = 13.sp)
+                    }
+                }
             }
         }
     }

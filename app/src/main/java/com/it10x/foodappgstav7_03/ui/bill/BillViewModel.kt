@@ -14,9 +14,11 @@ import com.it10x.foodappgstav7_03.data.pos.entities.PosKotBatchEntity
 import com.it10x.foodappgstav7_03.data.pos.entities.PosKotItemEntity
 import com.it10x.foodappgstav7_03.data.pos.entities.PosOrderItemEntity
 import com.it10x.foodappgstav7_03.data.pos.entities.PosOrderMasterEntity
+import com.it10x.foodappgstav7_03.data.pos.entities.PosOrderPaymentEntity
 import com.it10x.foodappgstav7_03.data.pos.repository.OrderSequenceRepository
 import com.it10x.foodappgstav7_03.data.pos.repository.OutletRepository
 import com.it10x.foodappgstav7_03.data.pos.repository.POSOrdersRepository
+import com.it10x.foodappgstav7_03.data.pos.repository.POSPaymentRepository
 import com.it10x.foodappgstav7_03.printer.PrintOrderBuilder
 import com.it10x.foodappgstav7_03.printer.PrinterManager
 import com.it10x.foodappgstav7_03.printer.ReceiptFormatter
@@ -31,6 +33,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import com.it10x.foodappgstav7_03.data.print.OutletInfo
 import com.it10x.foodappgstav7_03.data.print.OutletMapper
+import com.it10x.foodappgstav7_03.ui.payment.PaymentInput
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 class BillViewModel(
@@ -44,7 +47,8 @@ class BillViewModel(
     private val orderType: String,
     private val repository: POSOrdersRepository,
     private val printerManager: PrinterManager,
-    private val outletRepository: OutletRepository
+    private val outletRepository: OutletRepository,
+    private val paymentRepository: POSPaymentRepository
 ) : ViewModel() {
 
     // --------------------------------------------------------
@@ -184,12 +188,17 @@ class BillViewModel(
     // --------------------------------------------------------
     // Payment + Order Creation
     // --------------------------------------------------------
-    fun payBill(paymentType: String) {
+    fun payBill(payments: List<PaymentInput>) {
         viewModelScope.launch {
-            val kotItems = kotItemDao.getItemsForTableSync(tableId).filter { it.status == "DONE" }
+
+            val kotItems = kotItemDao
+                .getItemsForTableSync(tableId)
+                .filter { it.status == "DONE" }
+
             if (kotItems.isEmpty()) return@launch
 
             val itemSubtotal = kotItems.sumOf { it.basePrice * it.quantity }
+
             val taxTotal = kotItems.sumOf {
                 if (it.taxType == "exclusive")
                     it.basePrice * it.quantity * (it.taxRate / 100)
@@ -198,11 +207,16 @@ class BillViewModel(
 
             val now = System.currentTimeMillis()
             val orderId = UUID.randomUUID().toString()
-            val outlet = outletDao.getOutlet() ?: error("Outlet not configured")
+
+            val outlet = outletDao.getOutlet()
+                ?: error("Outlet not configured")
 
             val srno = orderSequenceRepository.nextOrderNo(
                 outletId = outlet.outletId,
-                businessDate = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+                businessDate = SimpleDateFormat(
+                    "yyyyMMdd",
+                    Locale.getDefault()
+                ).format(Date())
             )
 
             val flat = _discountFlat.value
@@ -211,7 +225,29 @@ class BillViewModel(
 
             val discount = if (flat > 0) flat else percentValue
 
+            val grandTotal = (itemSubtotal + taxTotal - discount)
+                .coerceAtLeast(0.0)
 
+            // =====================================================
+            // ✅ PAYMENT CALCULATION (NEW LOGIC)
+            // =====================================================
+
+            val totalPaid = payments.sumOf { it.amount }
+            val dueAmount = (grandTotal - totalPaid).coerceAtLeast(0.0)
+
+            val paymentStatus = when {
+                totalPaid == 0.0 -> "CREDIT"
+                dueAmount > 0 -> "PARTIAL"
+                else -> "PAID"
+            }
+
+            val paymentMode =
+                if (payments.size > 1) "MIXED"
+                else payments.firstOrNull()?.mode ?: "CREDIT"
+
+            // =====================================================
+            // ORDER MASTER
+            // =====================================================
 
             val orderMaster = PosOrderMasterEntity(
                 id = orderId,
@@ -226,22 +262,31 @@ class BillViewModel(
                 dState = deliveryAddress?.state,
                 dZipcode = deliveryAddress?.zipcode,
                 dLandmark = deliveryAddress?.landmark,
+
                 itemTotal = itemSubtotal,
                 taxTotal = taxTotal,
                 discountTotal = discount,
-                grandTotal = (itemSubtotal + taxTotal - discount).coerceAtLeast(0.0),
-                paymentMode = paymentType,
-                paymentStatus = "PAID",
+                grandTotal = grandTotal,
+
+                paymentMode = paymentMode,
+                paymentStatus = paymentStatus,
+                paidAmount = totalPaid,
+                dueAmount = dueAmount,
+
                 orderStatus = "COMPLETED",
+
                 deviceId = "POS",
                 deviceName = "POS",
                 appVersion = "1.0",
+
                 createdAt = now,
                 updatedAt = now,
+
                 syncStatus = "PENDING",
                 lastSyncedAt = null,
                 notes = null
             )
+
 
             val orderItems = kotItems
                 .groupBy {
@@ -294,14 +339,62 @@ class BillViewModel(
 
 
             // Save order and items atomically
+
+
+            val paymentEntities = payments.map {
+                PosOrderPaymentEntity(
+                    id = UUID.randomUUID().toString(),
+                    orderId = orderId,
+                    ownerId = outlet.ownerId,
+                    outletId = outlet.outletId,
+                    amount = it.amount,
+                    mode = it.mode,
+                    provider = null,
+                    method = null,
+                    status = "SUCCESS",
+                    deviceId = "POS",
+                    createdAt = now,
+                    syncStatus = "PENDING"
+                )
+            }
+
             withContext(Dispatchers.IO) {
+
+                // 1️⃣ Save Order
                 orderMasterDao.insert(orderMaster)
                 orderProductDao.insertAll(orderItems)
+
+                // 2️⃣ Save Payments (ONLY if paid > 0)
+                if (payments.isNotEmpty() && totalPaid > 0) {
+
+                    val paymentEntities = payments.map {
+                        PosOrderPaymentEntity(
+                            id = UUID.randomUUID().toString(),
+                            orderId = orderId,
+                            ownerId = outlet.ownerId,
+                            outletId = outlet.outletId,
+                            amount = it.amount,
+                            mode = it.mode,
+                            provider = null,
+                            method = null,
+                            status = "SUCCESS",
+                            deviceId = "POS",
+                            createdAt = now,
+                            syncStatus = "PENDING"
+                        )
+                    }
+
+                    paymentRepository.insertPayments(paymentEntities)
+                }
+
+                // 3️⃣ Finalize table
                 repository.finalizeTableAfterPayment(tableId)
             }
 
+
             // Print and finish
             printOrder(orderMaster, orderItems)
+
         }
     }
 

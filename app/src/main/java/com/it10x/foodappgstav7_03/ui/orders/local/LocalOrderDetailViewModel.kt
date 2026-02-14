@@ -39,6 +39,24 @@ class LocalOrderDetailViewModel(
         (total - discount).coerceAtLeast(0.0)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
+
+    val totalPaid = orderInfo
+        .map { it?.paidAmount ?: 0.0 }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+
+    val dueAmount = combine(grandTotal, totalPaid) { total, paid ->
+        (total - paid).coerceAtLeast(0.0)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+
+    val paymentStatus = combine(totalPaid, dueAmount) { paid, due ->
+        when {
+            paid == 0.0 -> "CREDIT"
+            due > 0.0 -> "PARTIAL"
+            else -> "PAID"
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "CREDIT")
+
+
     init {
         viewModelScope.launch {
             _orderInfo.value = repository.getOrderById(orderId)

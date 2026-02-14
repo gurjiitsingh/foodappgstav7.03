@@ -1,3 +1,6 @@
+package com.it10x.foodappgstav7_03.data.pos.entities
+
+
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey

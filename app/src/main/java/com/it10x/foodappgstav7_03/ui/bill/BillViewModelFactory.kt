@@ -7,6 +7,7 @@ import com.it10x.foodappgstav7_03.data.pos.AppDatabaseProvider
 import com.it10x.foodappgstav7_03.data.pos.repository.OrderSequenceRepository
 import com.it10x.foodappgstav7_03.data.pos.repository.OutletRepository
 import com.it10x.foodappgstav7_03.data.pos.repository.POSOrdersRepository
+import com.it10x.foodappgstav7_03.data.pos.repository.POSPaymentRepository
 import com.it10x.foodappgstav7_03.printer.PrinterManager
 
 class BillViewModelFactory(
@@ -17,24 +18,26 @@ class BillViewModelFactory(
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
+
         if (modelClass.isAssignableFrom(BillViewModel::class.java)) {
 
-            // ✅ Database (context from Application is safe)
             val db = AppDatabaseProvider.get(application)
 
-            // ✅ Repository for atomic SR No generation
             val orderSequenceRepository = OrderSequenceRepository(db)
 
-            // ✅ PrinterManager instance (required by BillViewModel)
             val printerManager = PrinterManager(application.applicationContext)
 
-            // ✅ Build POSOrdersRepository manually (with all required DAOs)
-            val repository = POSOrdersRepository(
-                db = db,                            // ✅ Added missing DB reference
+            val ordersRepository = POSOrdersRepository(
+                db = db,
                 orderMasterDao = db.orderMasterDao(),
                 orderProductDao = db.orderProductDao(),
                 cartDao = db.cartDao(),
-                tableDao = db.tableDao()            // ✅ Added missing tableDao
+                tableDao = db.tableDao()
+            )
+
+            // ✅ FIXED HERE
+            val paymentRepository = POSPaymentRepository(
+                paymentDao = db.posOrderPaymentDao()
             )
 
             @Suppress("UNCHECKED_CAST")
@@ -47,12 +50,16 @@ class BillViewModelFactory(
                 tableId = tableId,
                 tableName = tableName,
                 orderType = orderType,
-                repository = repository,              // ✅ Proper repository instance
-                printerManager = printerManager,       // ✅ Printer manager instance
-                outletRepository = OutletRepository(db.outletDao())
-                ) as T
+                repository = ordersRepository,
+                printerManager = printerManager,
+                outletRepository = OutletRepository(db.outletDao()),
+                paymentRepository = paymentRepository
+            ) as T
         }
 
-        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+        throw IllegalArgumentException(
+            "Unknown ViewModel class: ${modelClass.name}"
+        )
     }
 }
+

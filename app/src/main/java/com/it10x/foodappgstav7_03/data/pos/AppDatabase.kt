@@ -17,9 +17,13 @@ import com.it10x.foodappgstav7_03.data.pos.entities.config.*
         TableEntity::class,
         PosKotItemEntity::class,
         PosKotBatchEntity::class,
-        OrderSequenceEntity::class
+        OrderSequenceEntity::class,
+        PosOrderPaymentEntity::class,
+        PosCustomerEntity::class,
+        PosCustomerLedgerEntity::class,
+
     ],
-    version = 64,              // ⬆️ increment version since schema changed
+    version = 66,              // ⬆️ increment version since schema changed
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,5 +40,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun orderSequenceDao(): OrderSequenceDao
 
     abstract fun salesMasterDao(): SalesMasterDao
+
+    abstract fun posOrderPaymentDao(): PosOrderPaymentDao
+
+    abstract fun posCustomerDao(): PosCustomerDao
+    abstract fun posCustomerLedgerDao(): PosCustomerLedgerDao
 
 }

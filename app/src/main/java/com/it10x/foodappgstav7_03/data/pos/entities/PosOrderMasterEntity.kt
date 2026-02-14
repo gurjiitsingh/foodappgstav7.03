@@ -31,7 +31,7 @@ data class PosOrderMasterEntity(
 
     val customerName: String? = null,
     val customerPhone: String? = null,
-
+    val customerId: String? = null,
     // =====================================================
     // DELIVERY ADDRESS SNAPSHOT (ONLY FOR DELIVERY / ONLINE)
     // =====================================================
