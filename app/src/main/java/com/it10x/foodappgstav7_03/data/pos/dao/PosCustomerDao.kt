@@ -15,9 +15,46 @@ interface PosCustomerDao {
     @Query("SELECT * FROM pos_customers WHERE id = :customerId")
     suspend fun getCustomerById(customerId: String): PosCustomerEntity?
 
+    @Query("SELECT * FROM pos_customers WHERE phone = :phone LIMIT 1")
+    suspend fun getCustomerByPhone(phone: String): PosCustomerEntity?
+
+
     @Query("UPDATE pos_customers SET currentDue = currentDue + :amount WHERE id = :customerId")
     suspend fun increaseDue(customerId: String, amount: Double)
 
     @Query("UPDATE pos_customers SET currentDue = currentDue - :amount WHERE id = :customerId")
     suspend fun decreaseDue(customerId: String, amount: Double)
+
+
+    @Query("""
+    SELECT * FROM pos_customers
+    WHERE phone LIKE '%' || :query || '%'
+    OR name LIKE '%' || :query || '%'
+    ORDER BY name ASC
+""")
+    suspend fun searchCustomers(query: String): List<PosCustomerEntity>
+
+//    @Query("""
+//    SELECT * FROM pos_customers
+//    ORDER BY name ASC
+//""")
+//    suspend fun getAllCustomers(): List<PosCustomerEntity>
+
+
+    @Query("SELECT * FROM pos_customers WHERE syncStatus = 'PENDING'")
+    suspend fun getPendingSync(): List<PosCustomerEntity>
+
+    @Query("""
+    UPDATE pos_customers 
+    SET syncStatus = 'SYNCED',
+        lastSyncedAt = :time
+    WHERE id = :id
+""")
+    suspend fun markSynced(id: String, time: Long)
+
+
+
+    @Query("SELECT * FROM pos_customers ORDER BY currentDue DESC")
+    suspend fun getAllCustomers(): List<PosCustomerEntity>
+
 }

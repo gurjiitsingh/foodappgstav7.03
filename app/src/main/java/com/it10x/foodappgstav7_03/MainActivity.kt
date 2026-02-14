@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -227,6 +228,42 @@ class MainActivity : ComponentActivity() {
                                         .padding(horizontal = 16.dp)
                                         .padding(bottom = 4.dp),
                                     thickness = 0.5.dp
+                                )
+
+
+                                // ===============================
+// CUSTOMERS
+// ===============================
+                                SidebarSectionHeader("CUSTOMERS")
+
+                                NavigationDrawerItem(
+                                    label = { Text("Customer List") },
+                                    selected = false,
+                                    onClick = {
+                                        scope.launch { drawerState.close() }
+                                        navController.navigate("customers")
+                                    }
+                                )
+
+                                Divider(
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .padding(bottom = 4.dp),
+                                    thickness = 0.5.dp
+                                )
+
+                                NavigationDrawerItem(
+                                    label = { Text("Customer Ledger") },
+                                    selected = false,
+                                    onClick = {
+                                        navController.navigate("customer_list")
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Default.AccountBalance,
+                                            contentDescription = "Customer Ledger"
+                                        )
+                                    }
                                 )
 
                                 // ===============================

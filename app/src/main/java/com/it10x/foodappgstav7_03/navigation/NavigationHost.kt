@@ -40,9 +40,15 @@ import com.it10x.foodappgstav7_03.data.pos.repository.POSOrdersRepository
 
 
 import com.it10x.foodappgstav7_03.data.pos.repository.CartRepository
+import com.it10x.foodappgstav7_03.data.pos.repository.CustomerLedgerRepository
+import com.it10x.foodappgstav7_03.data.pos.repository.CustomerRepository
 import com.it10x.foodappgstav7_03.domain.usecase.TableReleaseUseCase
 import com.it10x.foodappgstav7_03.ui.cart.CartViewModel
 import com.it10x.foodappgstav7_03.ui.cart.CartViewModelFactory
+import com.it10x.foodappgstav7_03.ui.customer.CustomerLedgerScreen
+import com.it10x.foodappgstav7_03.ui.customer.CustomerLedgerViewModel
+import com.it10x.foodappgstav7_03.ui.customer.CustomerListScreen
+import com.it10x.foodappgstav7_03.ui.customer.CustomerViewModel
 import com.it10x.foodappgstav7_03.ui.pos.PosSessionViewModel
 
 import com.it10x.foodappgstav7_03.ui.sales.SalesScreen
@@ -334,7 +340,48 @@ fun NavigationHost(
         }
 
 
+        composable("customers") {
 
+            val context = LocalContext.current
+            val application = context.applicationContext as Application
+
+            val db = AppDatabaseProvider.get(application)
+
+            val viewModel = CustomerViewModel(
+                repository = CustomerRepository(
+                    customerDao = db.posCustomerDao()
+                )
+            )
+
+            CustomerListScreen(
+                viewModel = viewModel,
+                onCustomerClick = { customerId ->
+                    navController.navigate("customer_ledger/$customerId")
+                }
+            )
+        }
+
+
+
+        composable("customer_ledger/{customerId}") { backStackEntry ->
+
+            val customerId = backStackEntry.arguments?.getString("customerId") ?: ""
+
+
+
+            val context = LocalContext.current
+            val application = context.applicationContext as Application
+            val db = AppDatabaseProvider.get(application)
+
+            val repository = CustomerLedgerRepository(db)
+
+            val viewModel = CustomerLedgerViewModel(
+                repository = repository,
+                customerId = customerId
+            )
+
+            CustomerLedgerScreen(viewModel)
+        }
 
 
     }

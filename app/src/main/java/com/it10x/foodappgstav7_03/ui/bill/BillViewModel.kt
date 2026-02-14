@@ -36,6 +36,10 @@ import com.it10x.foodappgstav7_03.data.print.OutletMapper
 import com.it10x.foodappgstav7_03.ui.payment.PaymentInput
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import com.it10x.foodappgstav7_03.data.pos.dao.PosCustomerDao
+import com.it10x.foodappgstav7_03.data.pos.dao.PosCustomerLedgerDao
+import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerEntity
+import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerLedgerEntity
 class BillViewModel(
     private val kotItemDao: KotItemDao,
     private val orderMasterDao: OrderMasterDao,
@@ -48,7 +52,9 @@ class BillViewModel(
     private val repository: POSOrdersRepository,
     private val printerManager: PrinterManager,
     private val outletRepository: OutletRepository,
-    private val paymentRepository: POSPaymentRepository
+    private val paymentRepository: POSPaymentRepository,
+    private val customerDao: PosCustomerDao,
+    private val ledgerDao: PosCustomerLedgerDao
 ) : ViewModel() {
 
     // --------------------------------------------------------
@@ -232,14 +238,112 @@ class BillViewModel(
             // ✅ PAYMENT CALCULATION (NEW LOGIC)
             // =====================================================
 
-            val totalPaid = payments.sumOf { it.amount }
+            val totalPaid = payments
+                .filter { it.mode != "CREDIT" }
+                .sumOf { it.amount }
+
+            val totalCredit = payments
+                .filter { it.mode == "CREDIT" }
+                .sumOf { it.amount }
+
             val dueAmount = (grandTotal - totalPaid).coerceAtLeast(0.0)
 
+
             val paymentStatus = when {
-                totalPaid == 0.0 -> "CREDIT"
+                totalPaid == 0.0 && totalCredit > 0 -> "CREDIT"
                 dueAmount > 0 -> "PARTIAL"
                 else -> "PAID"
             }
+
+
+            val phone = deliveryAddress?.phone?.trim().orEmpty()
+
+            Log.d("DEBUG_PHONE", "deliveryAddress=$deliveryAddress")
+            Log.d("DEBUG_PHONE", "phone=${deliveryAddress?.phone}")
+            if (paymentStatus == "CREDIT" && phone.isBlank()) {
+                Log.e("DEBUG_PHONE", "Phone required for credit sale")
+                return@launch
+            }
+
+
+// =====================================================
+// CUSTOMER CREDIT HANDLING
+// =====================================================
+
+            var resolvedCustomerId: String? = null
+
+            if (paymentStatus == "CREDIT" || paymentStatus == "PARTIAL") {
+
+                val phone = deliveryAddress?.phone?.trim()
+
+                if (phone.isNullOrBlank()) {
+                    Log.e("CREDIT", "Phone required")
+                    return@launch
+                }
+
+
+                resolvedCustomerId = phone
+
+                val existingCustomer = customerDao.getCustomerById(phone)
+
+                if (existingCustomer == null) {
+
+                    // 🔥 FAST POS → create minimal customer
+                    val customer = PosCustomerEntity(
+                        id = phone,
+                        ownerId = outlet.ownerId,
+                        outletId = outlet.outletId,
+
+                        name = deliveryAddress?.name ?: "Customer",
+                        phone = phone,
+
+                        addressLine1 = null,
+                        addressLine2 = null,
+                        city = null,
+                        state = null,
+                        zipcode = null,
+                        landmark = null,
+
+                        creditLimit = 0.0,
+                        currentDue = dueAmount, // ✅ SET DUE DIRECTLY
+
+                        createdAt = now,
+                        updatedAt = null
+                    )
+
+                    customerDao.insert(customer)
+
+                } else {
+                    // ✅ Increase due
+                  //  customerDao.increaseDue(phone, dueAmount)
+                    customerDao.increaseDue(phone, totalCredit)
+                }
+
+                // 🔥 Ledger Entry
+                val lastBalance = ledgerDao.getLastBalance(phone) ?: 0.0
+                val newBalance = lastBalance + totalCredit
+
+                val ledgerEntry = PosCustomerLedgerEntity(
+                    id = UUID.randomUUID().toString(),
+                    ownerId = outlet.ownerId,
+                    outletId = outlet.outletId,
+                    customerId = phone,
+                    orderId = orderId,
+                    paymentId = null,
+                    type = "ORDER",
+                  //  debitAmount = dueAmount,
+                    debitAmount = totalCredit,
+                    creditAmount = 0.0,
+                    balanceAfter = newBalance,
+                    note = "Credit sale Order #$srno",
+                    createdAt = now,
+                    deviceId = "POS"
+                )
+
+                ledgerDao.insert(ledgerEntry)
+            }
+
+
 
             val paymentMode =
                 if (payments.size > 1) "MIXED"
@@ -256,6 +360,7 @@ class BillViewModel(
                 tableNo = tableName,
                 customerName = deliveryAddress?.name ?: "Walk-in",
                 customerPhone = deliveryAddress?.phone ?: "",
+                customerId = resolvedCustomerId,
                 dAddressLine1 = deliveryAddress?.line1,
                 dAddressLine2 = deliveryAddress?.line2,
                 dCity = deliveryAddress?.city,
@@ -270,8 +375,10 @@ class BillViewModel(
 
                 paymentMode = paymentMode,
                 paymentStatus = paymentStatus,
+//                paidAmount = totalPaid,
+//                dueAmount = dueAmount,
                 paidAmount = totalPaid,
-                dueAmount = dueAmount,
+                dueAmount = totalCredit,
 
                 orderStatus = "COMPLETED",
 

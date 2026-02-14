@@ -1,6 +1,7 @@
 package com.it10x.foodappgstav7_03.ui.bill
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,7 +36,15 @@ fun BillDialog(
 ) {
     if (!showBill || sessionId == null) return
 
-
+    val billViewModel: BillViewModel = viewModel(
+        key = "BillVM_${sessionId}",
+        factory = BillViewModelFactory(
+            application = LocalContext.current.applicationContext as Application,
+            tableId = tableId ?: orderType,
+            tableName = selectedTableName,
+            orderType = orderType
+        )
+    )
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -64,15 +73,7 @@ fun BillDialog(
                         .heightIn(max = 450.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    val billViewModel: BillViewModel = viewModel(
-                        key = "BillVM_${sessionId}",
-                        factory = BillViewModelFactory(
-                            application = LocalContext.current.applicationContext as Application,
-                            tableId = tableId ?: orderType,
-                            tableName = selectedTableName,
-                            orderType = orderType
-                        )
-                    )
+
 
                     Text(
                         "Final Bill",
@@ -111,21 +112,18 @@ fun BillDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val billViewModel: BillViewModel = viewModel(
-                        key = "BillVM_${sessionId}",
-                        factory = BillViewModelFactory(
-                            application = LocalContext.current.applicationContext as Application,
-                            tableId = tableId ?: orderType,
-                            tableName = selectedTableName,
-                            orderType = orderType
-                        )
-                    )
+
 
 
                     val discountFlat = remember { mutableStateOf("") }
                     val discountPercent = remember { mutableStateOf("") }
                     var activeField by remember { mutableStateOf("FLAT") }
                     var showRemainingOptions by remember { mutableStateOf(false) }
+
+
+                    //--------------- PHONE ---------------
+                    var customerPhone by remember { mutableStateOf("") }
+
 
 
                     // ---------------- DISCOUNT SECTION ----------------
@@ -158,6 +156,15 @@ fun BillDialog(
                             Text("Close", fontSize = 12.sp)
                         }
                     }
+
+                    OutlinedTextField(
+                        value = customerPhone,
+                        onValueChange = { customerPhone = it },
+                        label = { Text("Customer Phone (Required for Credit)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
 
 
                     Text("Discount", style = MaterialTheme.typography.titleSmall)
@@ -357,10 +364,24 @@ fun BillDialog(
                                 Button(
                                     onClick = {
                                         val amount = creditAmount.toDoubleOrNull() ?: 0.0
+                                        if (customerPhone.isBlank()) {
+                                            Log.e("CREDIT", "Phone required")
+                                            return@Button
+                                        }
                                         if (amount <= 0.0) return@Button
 
                                         partialPaidAmount += amount
-                                        billViewModel.payBill(listOf(PaymentInput("CREDIT", amount)))
+                                        billViewModel.setDeliveryAddress(
+                                            DeliveryAddressUiState(
+                                                name = "Customer",
+                                                phone = customerPhone
+                                            )
+                                        )
+
+                                        billViewModel.payBill(
+                                            listOf(PaymentInput("CREDIT", amount))
+                                        )
+
                                         usedPaymentModes.add("CREDIT")
                                         creditAmount = ""
 
@@ -384,6 +405,7 @@ fun BillDialog(
                         // Credit Button
                         Button(
                             onClick = { isCreditSelected = true },
+                         //   enabled = customerPhone.isNotBlank() && creditAmount.isNotBlank(),
                             modifier = Modifier.weight(1f).height(38.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107), contentColor = Color.Black)
                         ) { Text("💳 Credit", fontSize = 13.sp) }
@@ -490,38 +512,7 @@ fun BillDialog(
 
 
 
-// ---------- SHOW OTHER PAYMENT OPTIONS FOR REMAINING ----------
 
-
-//                    if (showRemainingOptions && remainingAmount > 0) {
-//                        Spacer(Modifier.height(8.dp))
-//                        Text("Pay Remaining: ₹$remainingAmount", style = MaterialTheme.typography.titleSmall)
-//
-//                        Row(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-//                        ) {
-//                            Button(onClick = {
-//                                billViewModel.payBill(listOf(PaymentInput("CASH", remainingAmount)))
-//                                onDismiss()
-//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("Cash") }
-//
-//                            Button(onClick = {
-//                                billViewModel.payBill(listOf(PaymentInput("CARD", remainingAmount)))
-//                                onDismiss()
-//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("Card") }
-//
-//                            Button(onClick = {
-//                                billViewModel.payBill(listOf(PaymentInput("UPI", remainingAmount)))
-//                                onDismiss()
-//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("UPI") }
-//
-//                            Button(onClick = {
-//                                billViewModel.payBill(listOf(PaymentInput("WALLET", remainingAmount)))
-//                                onDismiss()
-//                            }, modifier = Modifier.weight(1f).height(38.dp)) { Text("Wallet") }
-//                        }
-//                    }
 
 
 

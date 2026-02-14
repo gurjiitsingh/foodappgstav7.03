@@ -53,7 +53,9 @@ class BillViewModelFactory(
                 repository = ordersRepository,
                 printerManager = printerManager,
                 outletRepository = OutletRepository(db.outletDao()),
-                paymentRepository = paymentRepository
+                paymentRepository = paymentRepository,
+                customerDao = db.posCustomerDao(),
+                ledgerDao = db.posCustomerLedgerDao()
             ) as T
         }
 
