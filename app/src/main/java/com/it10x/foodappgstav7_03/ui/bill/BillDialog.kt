@@ -37,6 +37,7 @@ fun BillDialog(
     if (!showBill || sessionId == null) return
     //--------------- PHONE ---------------
     var customerPhone by remember { mutableStateOf("") }
+    var showPhonePad by remember { mutableStateOf(false) }
 
     val billViewModel: BillViewModel = viewModel(
         key = "BillVM_${sessionId}",
@@ -160,14 +161,57 @@ fun BillDialog(
                         }
                     }
 
-                    OutlinedTextField(
-                        value = customerPhone,
-                        onValueChange = { customerPhone = it },
-                        label = { Text("Customer Phone (Required for Credit)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showPhonePad = true }
+                    ) {
+                        OutlinedTextField(
+                            value = customerPhone,
+                            onValueChange = {},
+                            label = { Text("Customer Phone (Required for Credit)") },
+                            singleLine = true,
+                            readOnly = true,
+                            enabled = false,   // very important
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
+
+                    if (showPhonePad) {
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        NumPad { label ->
+                            when (label) {
+                                "←" -> if (customerPhone.isNotEmpty())
+                                    customerPhone = customerPhone.dropLast(1)
+
+                                "." -> {} // ignore dot for phone
+
+                                else -> {
+                                    if (customerPhone.length < 10) {  // optional limit
+                                        customerPhone += label
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Button(
+                            onClick = { showPhonePad = false }, // ✅ hide keyboard
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(36.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4CAF50),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text("OK")
+                        }
+                    }
 
 
                     Text("Discount", style = MaterialTheme.typography.titleSmall)
