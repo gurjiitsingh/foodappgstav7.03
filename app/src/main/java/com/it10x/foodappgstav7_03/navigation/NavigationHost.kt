@@ -47,8 +47,10 @@ import com.it10x.foodappgstav7_03.ui.cart.CartViewModel
 import com.it10x.foodappgstav7_03.ui.cart.CartViewModelFactory
 import com.it10x.foodappgstav7_03.ui.customer.CustomerLedgerScreen
 import com.it10x.foodappgstav7_03.ui.customer.CustomerLedgerViewModel
+import com.it10x.foodappgstav7_03.ui.customer.CustomerLedgerViewModelFactory
 import com.it10x.foodappgstav7_03.ui.customer.CustomerListScreen
 import com.it10x.foodappgstav7_03.ui.customer.CustomerViewModel
+import com.it10x.foodappgstav7_03.ui.customer.CustomerViewModelFactory
 import com.it10x.foodappgstav7_03.ui.pos.PosSessionViewModel
 
 import com.it10x.foodappgstav7_03.ui.sales.SalesScreen
@@ -344,12 +346,11 @@ fun NavigationHost(
 
             val context = LocalContext.current
             val application = context.applicationContext as Application
-
             val db = AppDatabaseProvider.get(application)
 
-            val viewModel = CustomerViewModel(
-                repository = CustomerRepository(
-                    customerDao = db.posCustomerDao()
+            val viewModel: CustomerViewModel = viewModel(
+                factory = CustomerViewModelFactory(
+                    CustomerRepository(db.posCustomerDao())
                 )
             )
 
@@ -362,12 +363,16 @@ fun NavigationHost(
         }
 
 
+        composable(
+            route = "customer_ledger/{customerId}",
+            arguments = listOf(
+                navArgument("customerId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
 
-        composable("customer_ledger/{customerId}") { backStackEntry ->
-
-            val customerId = backStackEntry.arguments?.getString("customerId") ?: ""
-
-
+            val customerId = backStackEntry.arguments?.getString("customerId")!!
 
             val context = LocalContext.current
             val application = context.applicationContext as Application
@@ -375,13 +380,37 @@ fun NavigationHost(
 
             val repository = CustomerLedgerRepository(db)
 
-            val viewModel = CustomerLedgerViewModel(
-                repository = repository,
-                customerId = customerId
+            val viewModel: CustomerLedgerViewModel = viewModel(
+                factory = CustomerLedgerViewModelFactory(repository, customerId)
             )
 
-            CustomerLedgerScreen(viewModel)
+            CustomerLedgerScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
+
+
+
+//        composable("customer_ledger/{customerId}") { backStackEntry ->
+//
+//            val customerId = backStackEntry.arguments?.getString("customerId") ?: ""
+//
+//
+//
+//            val context = LocalContext.current
+//            val application = context.applicationContext as Application
+//            val db = AppDatabaseProvider.get(application)
+//
+//            val repository = CustomerLedgerRepository(db)
+//
+//            val viewModel = CustomerLedgerViewModel(
+//                repository = repository,
+//                customerId = customerId
+//            )
+//
+//            CustomerLedgerScreen(viewModel)
+//        }
 
 
     }

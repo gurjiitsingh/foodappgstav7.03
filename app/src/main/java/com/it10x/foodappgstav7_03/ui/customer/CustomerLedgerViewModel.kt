@@ -7,6 +7,7 @@ import com.it10x.foodappgstav7_03.data.pos.repository.CustomerLedgerRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class CustomerLedgerViewModel(
     private val repository: CustomerLedgerRepository,
@@ -25,4 +26,22 @@ class CustomerLedgerViewModel(
             _ledger.value = repository.getLedger(customerId)
         }
     }
+
+
+
+
+    fun addPayment(amount: Double) {
+        viewModelScope.launch {
+            repository.addPaymentCredit(
+                customerId = customerId,
+                ownerId = "POS",
+                outletId = "POS",
+                paymentId = UUID.randomUUID().toString(),
+                amount = amount
+            )
+            loadLedger()
+        }
+    }
+
+
 }

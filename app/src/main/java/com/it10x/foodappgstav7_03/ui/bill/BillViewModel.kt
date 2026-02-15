@@ -269,21 +269,22 @@ class BillViewModel(
             if ((paymentStatus == "CREDIT" || paymentStatus == "PARTIAL")
                 && inputPhone.isBlank()
             ) {
-                Log.e("PAY", "Phone required for credit/partial sale")
+                Log.e("CREDIT", "Phone required for credit/partial sale")
                 return@launch
             }
 
+
             // ===========================
-            // CUSTOMER CREDIT HANDLING
-            // ===========================
+// ENSURE CUSTOMER EXISTS (IF PHONE ENTERED)
+// ===========================
 
             var resolvedCustomerId: String? = null
 
-            if (paymentStatus == "CREDIT" || paymentStatus == "PARTIAL") {
+            if (inputPhone.isNotBlank()) {
 
                 resolvedCustomerId = inputPhone
 
-                val existingCustomer = customerDao.getCustomerById(inputPhone)
+                val existingCustomer = customerDao.getCustomerByPhone(inputPhone)
 
                 if (existingCustomer == null) {
 
@@ -300,17 +301,35 @@ class BillViewModel(
                         zipcode = null,
                         landmark = null,
                         creditLimit = 0.0,
-                        currentDue = totalCredit,
+                        currentDue = 0.0,   // 🔥 important
                         createdAt = now,
                         updatedAt = null
                     )
 
                     customerDao.insert(customer)
+                }
+            }
 
-                } else {
+
+            // ===========================
+            // CUSTOMER CREDIT HANDLING
+            // ===========================
+
+
+
+            if (paymentStatus == "CREDIT" || paymentStatus == "PARTIAL") {
+
+                resolvedCustomerId = inputPhone
+
+             //   val existingCustomer = customerDao.getCustomerById(inputPhone)
+                val existingCustomer = customerDao.getCustomerByPhone(inputPhone)
+
+                Log.e("CREDIT", "customer found: ${existingCustomer}")
+
+                Log.e("CREDIT", "customer hew credit: ${totalCredit}")
+
 
                     customerDao.increaseDue(inputPhone, totalCredit)
-                }
 
                 val lastBalance = ledgerDao.getLastBalance(inputPhone) ?: 0.0
                 val newBalance = lastBalance + totalCredit

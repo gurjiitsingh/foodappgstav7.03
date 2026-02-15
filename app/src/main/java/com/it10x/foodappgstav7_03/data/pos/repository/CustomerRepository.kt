@@ -1,5 +1,6 @@
 package com.it10x.foodappgstav7_03.data.pos.repository
 
+import android.util.Log
 import com.it10x.foodappgstav7_03.data.pos.dao.PosCustomerDao
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerEntity
 
@@ -23,9 +24,17 @@ class CustomerRepository(
     // -----------------------------------------------------
     suspend fun search(query: String): List<PosCustomerEntity> {
         return if (query.isBlank()) {
-            customerDao.getAllCustomers()
+            Log.e("CREDIT", "getAllCustomers called")
+
+            val result = customerDao.getAllCustomers()
+
+            Log.e("CREDIT", "getAllCustomers result size = ${result.size}")
+
+            result
         } else {
-            customerDao.searchCustomers(query)
+            val result = customerDao.searchCustomers(query)
+            Log.e("CREDIT", "search result size = ${result.size}")
+            result
         }
     }
 
