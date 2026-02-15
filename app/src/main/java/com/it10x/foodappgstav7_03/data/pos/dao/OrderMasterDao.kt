@@ -107,6 +107,55 @@ WHERE id IN (:ids)
     @Query("UPDATE pos_order_master SET grandTotal = :newTotal, updatedAt = :updatedAt WHERE id = :orderId")
     suspend fun updateGrandTotal(orderId: String, newTotal: Double, updatedAt: Long = System.currentTimeMillis())
 
+
+    @Query("""
+    SELECT * FROM pos_order_master
+    WHERE paymentStatus = 'DELIVERY_PENDING'
+    ORDER BY createdAt DESC
+""")
+    suspend fun getDeliveryPendingOrders(): List<PosOrderMasterEntity>
+
+
+    @Query("""
+UPDATE pos_order_master
+SET paymentStatus = :status,
+    paymentMode = :paymentMode,
+    paidAmount = :paidAmount,
+    dueAmount = :dueAmount,
+    updatedAt = :time
+WHERE id = :orderId
+""")
+    suspend fun updatePaymentStatus(
+        orderId: String,
+        status: String,
+        paymentMode: String,
+        paidAmount: Double,
+        dueAmount: Double,
+        time: Long
+    )
+
+
+//    @Query("""
+//SELECT * FROM pos_order_master
+//WHERE customerId = :customerId
+//AND paymentStatus IN ('CREDIT','PARTIAL')
+//ORDER BY createdAt ASC
+//""")
+//    suspend fun getPendingOrdersForCustomer(customerId: String): List<PosOrderMasterEntity>
+
+
+
+    @Query("""
+    SELECT * FROM pos_order_master
+    WHERE customerId = :customerId
+      AND paymentStatus IN ('CREDIT', 'PARTIAL')
+    ORDER BY createdAt ASC
+""")
+    suspend fun getPendingOrdersForCustomer(
+        customerId: String
+    ): List<PosOrderMasterEntity>
+
+
 }
 
 

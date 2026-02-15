@@ -2,6 +2,7 @@ package com.it10x.foodappgstav7_03.ui.bill
 
 import android.app.Application
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +36,8 @@ fun BillDialog(
     selectedTableName: String
 ) {
     if (!showBill || sessionId == null) return
+
+    val context = LocalContext.current
     //--------------- PHONE ---------------
     var customerPhone by remember { mutableStateOf("") }
     var showPhonePad by remember { mutableStateOf(false) }
@@ -418,7 +421,11 @@ fun BillDialog(
                                     onClick = {
                                         val amount = creditAmount.toDoubleOrNull() ?: 0.0
                                         if (customerPhone.isBlank()) {
-                                            Log.e("CREDIT", "Phone required")
+                                            Toast.makeText(
+                                                context,
+                                                "Phone number required for credit",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                             return@Button
                                         }
                                         if (amount <= 0.0) return@Button
@@ -465,14 +472,28 @@ fun BillDialog(
                         // Pay Later Button
                         Button(
                             onClick = {
+
+
+                                    val amount = creditAmount.toDoubleOrNull() ?: 0.0
+                                    if (customerPhone.isBlank()) {
+                                        Toast.makeText(
+                                            context,
+                                            "Phone number required for delivery",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        return@Button
+                                    }
+
                                 if (remainingAmount > 0) {
                                     billViewModel.payBill(
-                                        payments = listOf(PaymentInput("PAY_LATER", remainingAmount)),
+                                        payments = listOf(
+                                            PaymentInput("DELIVERY_PENDING", remainingAmount)
+                                        ),
                                         name = "Customer",
                                         phone = customerPhone
                                     )
 
-                                    usedPaymentModes.add("PAY_LATER")
+                                    usedPaymentModes.add("PENDING")
                                 }
                                 onDismiss()
                             },

@@ -116,10 +116,11 @@ fun CustomerLedgerScreen(
         SettlementDialog(
             maxAmount = currentBalance,
             onDismiss = { showSettlementDialog = false },
-            onConfirm = {
-                viewModel.addPayment(it)
+            onConfirm = { amount, mode ->
+                viewModel.addPayment(amount, mode)
                 showSettlementDialog = false
             }
+
         )
     }
 }
@@ -183,10 +184,11 @@ fun LedgerRow(entry: PosCustomerLedgerEntity) {
 fun SettlementDialog(
     maxAmount: Double,
     onDismiss: () -> Unit,
-    onConfirm: (Double) -> Unit
+    onConfirm: (Double, String) -> Unit
 ) {
 
     var amountText by remember { mutableStateOf(maxAmount.toString()) }
+    var selectedMode by remember { mutableStateOf("CASH") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -204,6 +206,22 @@ fun SettlementDialog(
                     label = { Text("Enter Amount") },
                     singleLine = true
                 )
+
+                Spacer(Modifier.height(12.dp))
+
+                Text("Select Payment Mode")
+
+                Spacer(Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    PaymentModeChip("CASH", selectedMode) { selectedMode = it }
+                    PaymentModeChip("CARD", selectedMode) { selectedMode = it }
+                    PaymentModeChip("UPI", selectedMode) { selectedMode = it }
+                    PaymentModeChip("WALLET", selectedMode) { selectedMode = it }
+                }
             }
         },
         confirmButton = {
@@ -211,7 +229,7 @@ fun SettlementDialog(
                 onClick = {
                     val amount = amountText.toDoubleOrNull() ?: 0.0
                     if (amount > 0 && amount <= maxAmount) {
-                        onConfirm(amount)
+                        onConfirm(amount, selectedMode)
                     }
                 }
             ) {
@@ -225,6 +243,7 @@ fun SettlementDialog(
         }
     )
 }
+
 
 
 @Composable
@@ -272,4 +291,17 @@ fun ProfessionalLedgerRow(entry: PosCustomerLedgerEntity) {
     }
 
     Divider(thickness = 0.5.dp)
+}
+@Composable
+fun PaymentModeChip(
+    mode: String,
+    selectedMode: String,
+    onSelect: (String) -> Unit
+) {
+
+    FilterChip(
+        selected = selectedMode == mode,
+        onClick = { onSelect(mode) },
+        label = { Text(mode) }
+    )
 }

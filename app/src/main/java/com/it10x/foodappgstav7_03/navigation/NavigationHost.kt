@@ -51,6 +51,8 @@ import com.it10x.foodappgstav7_03.ui.customer.CustomerLedgerViewModelFactory
 import com.it10x.foodappgstav7_03.ui.customer.CustomerListScreen
 import com.it10x.foodappgstav7_03.ui.customer.CustomerViewModel
 import com.it10x.foodappgstav7_03.ui.customer.CustomerViewModelFactory
+import com.it10x.foodappgstav7_03.ui.delivery.DeliverySettlementScreen
+import com.it10x.foodappgstav7_03.ui.delivery.DeliverySettlementViewModel
 import com.it10x.foodappgstav7_03.ui.pos.PosSessionViewModel
 
 import com.it10x.foodappgstav7_03.ui.sales.SalesScreen
@@ -392,25 +394,12 @@ fun NavigationHost(
 
 
 
-//        composable("customer_ledger/{customerId}") { backStackEntry ->
-//
-//            val customerId = backStackEntry.arguments?.getString("customerId") ?: ""
-//
-//
-//
-//            val context = LocalContext.current
-//            val application = context.applicationContext as Application
-//            val db = AppDatabaseProvider.get(application)
-//
-//            val repository = CustomerLedgerRepository(db)
-//
-//            val viewModel = CustomerLedgerViewModel(
-//                repository = repository,
-//                customerId = customerId
-//            )
-//
-//            CustomerLedgerScreen(viewModel)
-//        }
+        composable("delivery_settlement") {
+            DeliverySettlementScreen(
+                viewModel = DeliverySettlementViewModel(db),
+                onBack = { navController.popBackStack() }
+            )
+        }
 
 
     }

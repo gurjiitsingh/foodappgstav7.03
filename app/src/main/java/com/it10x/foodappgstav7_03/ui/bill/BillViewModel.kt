@@ -246,21 +246,57 @@ class BillViewModel(
             // PAYMENT CALCULATION
             // ===========================
 
+//            val totalPaid = payments
+//                .filter { it.mode in listOf("CASH", "CARD", "UPI", "WALLET") }
+//                .sumOf { it.amount }
+//
+//            val totalCredit = payments
+//                .filter { it.mode == "CREDIT" }
+//                .sumOf { it.amount }
+//
+//            val deliveryPending = payments
+//                .filter { it.mode == "DELIVERY_PENDING" }
+//                .sumOf { it.amount }
+//
+////            val dueAmount = (grandTotal - totalPaid).coerceAtLeast(0.0)
+//            val dueAmount = when {
+//                deliveryPending > 0 -> 0.0   // not yet due
+//                else -> (grandTotal - totalPaid).coerceAtLeast(0.0)
+//            }
+
             val totalPaid = payments
-                .filter { it.mode != "CREDIT" }
+                .filter { it.mode in listOf("CASH", "CARD", "UPI", "WALLET") }
                 .sumOf { it.amount }
 
             val totalCredit = payments
                 .filter { it.mode == "CREDIT" }
                 .sumOf { it.amount }
 
-            val dueAmount = (grandTotal - totalPaid).coerceAtLeast(0.0)
+            val deliveryPending = payments
+                .filter { it.mode == "DELIVERY_PENDING" }
+                .sumOf { it.amount }
+
+
+
+            val paidAmount = when {
+                deliveryPending > 0 -> 0.0
+                else -> totalPaid
+            }
+
+            val dueAmount = when {
+                deliveryPending > 0 -> grandTotal
+                else -> (grandTotal - totalPaid).coerceAtLeast(0.0)
+            }
+
 
             val paymentStatus = when {
+                deliveryPending > 0 -> "DELIVERY_PENDING"
                 totalPaid == 0.0 && totalCredit > 0 -> "CREDIT"
                 dueAmount > 0 -> "PARTIAL"
                 else -> "PAID"
             }
+
+
 
             // ===========================
             // PHONE VALIDATION
@@ -384,9 +420,12 @@ class BillViewModel(
                 grandTotal = grandTotal,
 
                 paymentMode = paymentMode,
+//                paymentStatus = paymentStatus,
+//                paidAmount = totalPaid,
+//                dueAmount = totalCredit,
                 paymentStatus = paymentStatus,
-                paidAmount = totalPaid,
-                dueAmount = totalCredit,
+                paidAmount = paidAmount,
+                dueAmount = dueAmount,
 
                 orderStatus = "COMPLETED",
 

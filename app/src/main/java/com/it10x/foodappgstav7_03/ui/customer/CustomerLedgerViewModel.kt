@@ -29,8 +29,22 @@ class CustomerLedgerViewModel(
 
 
 
+//    fun addPayment(amount: Double, mode: String){
+//        viewModelScope.launch {
+//            repository.settleCustomerPayment(
+//                customerId = customerId,
+//                ownerId = "POS",
+//                outletId = "POS",
+//                paymentId = UUID.randomUUID().toString(),
+//                amount = amount,
+//                paymentMode = mode
+//            )
+//            loadLedger()
+//        }
+//    }
 
-    fun addPayment(amount: Double) {
+
+    fun addPayment(amount: Double, mode: String){
         viewModelScope.launch {
             repository.addPaymentCredit(
                 customerId = customerId,

@@ -57,4 +57,8 @@ interface PosCustomerDao {
     @Query("SELECT * FROM pos_customers ORDER BY currentDue DESC")
     suspend fun getAllCustomers(): List<PosCustomerEntity>
 
+
+
+
+
 }

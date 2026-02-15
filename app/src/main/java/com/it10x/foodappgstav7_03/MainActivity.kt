@@ -253,18 +253,24 @@ class MainActivity : ComponentActivity() {
                                 )
 
                                 NavigationDrawerItem(
-                                    label = { Text("Customer Ledger") },
+                                    label = { Text("Delivery Settlement") },
                                     selected = false,
-                                    onClick = {
-                                        navController.navigate("customer_list")
-                                    },
-                                    icon = {
-                                        Icon(
-                                            imageVector = Icons.Default.AccountBalance,
-                                            contentDescription = "Customer Ledger"
-                                        )
-                                    }
+                                    onClick = { navController.navigate("delivery_settlement") }
                                 )
+
+//                                NavigationDrawerItem(
+//                                    label = { Text("Customer Ledger") },
+//                                    selected = false,
+//                                    onClick = {
+//                                        navController.navigate("customer_list")
+//                                    },
+//                                    icon = {
+//                                        Icon(
+//                                            imageVector = Icons.Default.AccountBalance,
+//                                            contentDescription = "Customer Ledger"
+//                                        )
+//                                    }
+//                                )
 
                                 // ===============================
                                 // SYNC & DATA
