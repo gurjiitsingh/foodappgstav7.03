@@ -194,8 +194,16 @@ class BillViewModel(
     // --------------------------------------------------------
     // Payment + Order Creation
     // --------------------------------------------------------
-    fun payBill(payments: List<PaymentInput>) {
+    fun payBill(
+        payments: List<PaymentInput>,
+        name: String,
+        phone: String
+    ) {
+
         viewModelScope.launch {
+
+            val inputPhone = phone.trim()
+            val inputName = name.trim().ifBlank { "Customer" }
 
             val kotItems = kotItemDao
                 .getItemsForTableSync(tableId)
@@ -234,9 +242,9 @@ class BillViewModel(
             val grandTotal = (itemSubtotal + taxTotal - discount)
                 .coerceAtLeast(0.0)
 
-            // =====================================================
-            // ✅ PAYMENT CALCULATION (NEW LOGIC)
-            // =====================================================
+            // ===========================
+            // PAYMENT CALCULATION
+            // ===========================
 
             val totalPaid = payments
                 .filter { it.mode != "CREDIT" }
@@ -248,65 +256,51 @@ class BillViewModel(
 
             val dueAmount = (grandTotal - totalPaid).coerceAtLeast(0.0)
 
-
             val paymentStatus = when {
                 totalPaid == 0.0 && totalCredit > 0 -> "CREDIT"
                 dueAmount > 0 -> "PARTIAL"
                 else -> "PAID"
             }
 
+            // ===========================
+            // PHONE VALIDATION
+            // ===========================
 
-            val phone = deliveryAddress?.phone?.trim().orEmpty()
-
-            Log.d("DEBUG_PHONE", "deliveryAddress=$deliveryAddress")
-            Log.d("DEBUG_PHONE", "phone=${deliveryAddress?.phone}")
-            if (paymentStatus == "CREDIT" && phone.isBlank()) {
-                Log.e("DEBUG_PHONE", "Phone required for credit sale")
+            if ((paymentStatus == "CREDIT" || paymentStatus == "PARTIAL")
+                && inputPhone.isBlank()
+            ) {
+                Log.e("PAY", "Phone required for credit/partial sale")
                 return@launch
             }
 
-
-// =====================================================
-// CUSTOMER CREDIT HANDLING
-// =====================================================
+            // ===========================
+            // CUSTOMER CREDIT HANDLING
+            // ===========================
 
             var resolvedCustomerId: String? = null
 
             if (paymentStatus == "CREDIT" || paymentStatus == "PARTIAL") {
 
-                val phone = deliveryAddress?.phone?.trim()
+                resolvedCustomerId = inputPhone
 
-                if (phone.isNullOrBlank()) {
-                    Log.e("CREDIT", "Phone required")
-                    return@launch
-                }
-
-
-                resolvedCustomerId = phone
-
-                val existingCustomer = customerDao.getCustomerById(phone)
+                val existingCustomer = customerDao.getCustomerById(inputPhone)
 
                 if (existingCustomer == null) {
 
-                    // 🔥 FAST POS → create minimal customer
                     val customer = PosCustomerEntity(
-                        id = phone,
+                        id = inputPhone,
                         ownerId = outlet.ownerId,
                         outletId = outlet.outletId,
-
-                        name = deliveryAddress?.name ?: "Customer",
-                        phone = phone,
-
+                        name = inputName,
+                        phone = inputPhone,
                         addressLine1 = null,
                         addressLine2 = null,
                         city = null,
                         state = null,
                         zipcode = null,
                         landmark = null,
-
                         creditLimit = 0.0,
-                        currentDue = dueAmount, // ✅ SET DUE DIRECTLY
-
+                        currentDue = totalCredit,
                         createdAt = now,
                         updatedAt = null
                     )
@@ -314,24 +308,21 @@ class BillViewModel(
                     customerDao.insert(customer)
 
                 } else {
-                    // ✅ Increase due
-                  //  customerDao.increaseDue(phone, dueAmount)
-                    customerDao.increaseDue(phone, totalCredit)
+
+                    customerDao.increaseDue(inputPhone, totalCredit)
                 }
 
-                // 🔥 Ledger Entry
-                val lastBalance = ledgerDao.getLastBalance(phone) ?: 0.0
+                val lastBalance = ledgerDao.getLastBalance(inputPhone) ?: 0.0
                 val newBalance = lastBalance + totalCredit
 
                 val ledgerEntry = PosCustomerLedgerEntity(
                     id = UUID.randomUUID().toString(),
                     ownerId = outlet.ownerId,
                     outletId = outlet.outletId,
-                    customerId = phone,
+                    customerId = inputPhone,
                     orderId = orderId,
                     paymentId = null,
                     type = "ORDER",
-                  //  debitAmount = dueAmount,
                     debitAmount = totalCredit,
                     creditAmount = 0.0,
                     balanceAfter = newBalance,
@@ -343,24 +334,24 @@ class BillViewModel(
                 ledgerDao.insert(ledgerEntry)
             }
 
-
-
             val paymentMode =
                 if (payments.size > 1) "MIXED"
                 else payments.firstOrNull()?.mode ?: "CREDIT"
 
-            // =====================================================
+            // ===========================
             // ORDER MASTER
-            // =====================================================
+            // ===========================
 
             val orderMaster = PosOrderMasterEntity(
                 id = orderId,
                 srno = srno,
                 orderType = orderType,
                 tableNo = tableName,
-                customerName = deliveryAddress?.name ?: "Walk-in",
-                customerPhone = deliveryAddress?.phone ?: "",
+                customerName = inputName,
+                customerPhone = inputPhone,
                 customerId = resolvedCustomerId,
+
+                // keeping delivery address untouched
                 dAddressLine1 = deliveryAddress?.line1,
                 dAddressLine2 = deliveryAddress?.line2,
                 dCity = deliveryAddress?.city,
@@ -375,8 +366,6 @@ class BillViewModel(
 
                 paymentMode = paymentMode,
                 paymentStatus = paymentStatus,
-//                paidAmount = totalPaid,
-//                dueAmount = dueAmount,
                 paidAmount = totalPaid,
                 dueAmount = totalCredit,
 
@@ -393,7 +382,6 @@ class BillViewModel(
                 lastSyncedAt = null,
                 notes = null
             )
-
 
             val orderItems = kotItems
                 .groupBy {
@@ -433,45 +421,19 @@ class BillViewModel(
                         taxType = first.taxType,
                         taxAmountPerItem = taxPerItem,
                         taxTotal = taxTotalItem,
-                        // ✅ ADD THESE (if not already in entity)
                         note = first.note,
                         modifiersJson = first.modifiersJson,
                         finalPricePerItem = first.basePrice + taxPerItem,
                         finalTotal = subtotal + taxTotalItem,
-                        createdAt = now,
-
-
+                        createdAt = now
                     )
                 }
 
-
-            // Save order and items atomically
-
-
-            val paymentEntities = payments.map {
-                PosOrderPaymentEntity(
-                    id = UUID.randomUUID().toString(),
-                    orderId = orderId,
-                    ownerId = outlet.ownerId,
-                    outletId = outlet.outletId,
-                    amount = it.amount,
-                    mode = it.mode,
-                    provider = null,
-                    method = null,
-                    status = "SUCCESS",
-                    deviceId = "POS",
-                    createdAt = now,
-                    syncStatus = "PENDING"
-                )
-            }
-
             withContext(Dispatchers.IO) {
 
-                // 1️⃣ Save Order
                 orderMasterDao.insert(orderMaster)
                 orderProductDao.insertAll(orderItems)
 
-                // 2️⃣ Save Payments (ONLY if paid > 0)
                 if (payments.isNotEmpty() && totalPaid > 0) {
 
                     val paymentEntities = payments.map {
@@ -494,16 +456,13 @@ class BillViewModel(
                     paymentRepository.insertPayments(paymentEntities)
                 }
 
-                // 3️⃣ Finalize table
                 repository.finalizeTableAfterPayment(tableId)
             }
 
-
-            // Print and finish
             printOrder(orderMaster, orderItems)
-
         }
     }
+
 
 
     fun deleteItem(itemId: String) {

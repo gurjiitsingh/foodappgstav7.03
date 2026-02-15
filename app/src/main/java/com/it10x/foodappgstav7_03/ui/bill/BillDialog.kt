@@ -35,6 +35,8 @@ fun BillDialog(
     selectedTableName: String
 ) {
     if (!showBill || sessionId == null) return
+    //--------------- PHONE ---------------
+    var customerPhone by remember { mutableStateOf("") }
 
     val billViewModel: BillViewModel = viewModel(
         key = "BillVM_${sessionId}",
@@ -89,12 +91,14 @@ fun BillDialog(
                             val totalAmount = billViewModel.uiState.value.total
 
                             billViewModel.payBill(
-                                listOf(
+                                payments = listOf(
                                     PaymentInput(
                                         mode = paymentType.name,
                                         amount = totalAmount
                                     )
-                                )
+                                ),
+                                name = "Customer",
+                                phone = customerPhone
                             )
 
                             onDismiss()
@@ -121,8 +125,7 @@ fun BillDialog(
                     var showRemainingOptions by remember { mutableStateOf(false) }
 
 
-                    //--------------- PHONE ---------------
-                    var customerPhone by remember { mutableStateOf("") }
+
 
 
 
@@ -316,10 +319,16 @@ fun BillDialog(
                     val remainingAmount = (totalAmount - partialPaidAmount).coerceAtLeast(0.0)
                     var isCreditSelected by remember { mutableStateOf(false) }
 
-//                    var partialPaidAmount by remember { mutableStateOf(0.0) }
-//                    val totalAmount = billViewModel.uiState.value.total
-//                    val remainingAmount = (totalAmount - partialPaidAmount).coerceAtLeast(0.0)
-//                    var showRemainingOptions by remember { mutableStateOf(false) }
+
+
+
+                    val paymentList = remember { mutableStateListOf<PaymentInput>() }   // ✅ ADD THIS LINE
+
+
+
+
+
+
 
 // Track used payment methods to prevent duplicates
                     val usedPaymentModes = remember { mutableStateListOf<String>() }
@@ -369,29 +378,28 @@ fun BillDialog(
                                             return@Button
                                         }
                                         if (amount <= 0.0) return@Button
+                                        if (amount > remainingAmount) return@Button
 
+                                        // ✅ Add to local payment list ONLY
+                                        paymentList.add(PaymentInput("CREDIT", amount))
                                         partialPaidAmount += amount
-                                        billViewModel.setDeliveryAddress(
-                                            DeliveryAddressUiState(
-                                                name = "Customer",
-                                                phone = customerPhone
-                                            )
-                                        )
 
-                                        billViewModel.payBill(
-                                            listOf(PaymentInput("CREDIT", amount))
-                                        )
-
-                                        usedPaymentModes.add("CREDIT")
                                         creditAmount = ""
 
                                         if (partialPaidAmount >= totalAmount) {
+                                            // Now submit
+                                            billViewModel.payBill(
+                                                payments = paymentList.toList(),
+                                                name = "Customer",
+                                                phone = customerPhone
+                                            )
                                             onDismiss()
                                         } else {
                                             showRemainingOptions = true
                                             isCreditSelected = false
                                         }
-                                    },
+                                    }
+                                    ,
                                     modifier = Modifier.fillMaxWidth().height(38.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107), contentColor = Color.Black)
                                 ) {
@@ -414,7 +422,12 @@ fun BillDialog(
                         Button(
                             onClick = {
                                 if (remainingAmount > 0) {
-                                    billViewModel.payBill(listOf(PaymentInput("PAY_LATER", remainingAmount)))
+                                    billViewModel.payBill(
+                                        payments = listOf(PaymentInput("PAY_LATER", remainingAmount)),
+                                        name = "Customer",
+                                        phone = customerPhone
+                                    )
+
                                     usedPaymentModes.add("PAY_LATER")
                                 }
                                 onDismiss()
@@ -448,7 +461,14 @@ fun BillDialog(
                             Button(
                                 onClick = {
                                     val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
-                                    billViewModel.payBill(listOf(PaymentInput("CASH", amountToPay)))
+
+                                    billViewModel.payBill(
+                                        payments = listOf(PaymentInput("CASH", amountToPay)),
+                                        name = "Customer",
+                                        phone = customerPhone
+                                    )
+
+
                                     partialPaidAmount += amountToPay
                                     onDismiss()
                                 },
@@ -462,7 +482,12 @@ fun BillDialog(
                             Button(
                                 onClick = {
                                     val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
-                                    billViewModel.payBill(listOf(PaymentInput("CARD", amountToPay)))
+
+                                    billViewModel.payBill(
+                                        payments = listOf(PaymentInput("CARD", amountToPay)),
+                                        name = "Customer",
+                                        phone = customerPhone
+                                    )
                                     partialPaidAmount += amountToPay
                                     onDismiss()
                                 },
@@ -482,7 +507,12 @@ fun BillDialog(
                             Button(
                                 onClick = {
                                     val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
-                                    billViewModel.payBill(listOf(PaymentInput("UPI", amountToPay)))
+
+                                    billViewModel.payBill(
+                                        payments = listOf(PaymentInput("UPI", amountToPay)),
+                                        name = "Customer",
+                                        phone = customerPhone
+                                    )
                                     partialPaidAmount += amountToPay
                                     onDismiss()
                                 },
@@ -496,7 +526,12 @@ fun BillDialog(
                             Button(
                                 onClick = {
                                     val amountToPay = if (showRemainingOptions) remainingAmount else billViewModel.uiState.value.total
-                                    billViewModel.payBill(listOf(PaymentInput("WALLET", amountToPay)))
+                                 billViewModel.payBill(
+                                        payments = listOf(PaymentInput("WALLET", amountToPay)),
+                                        name = "Customer",
+                                        phone = customerPhone
+                                    )
+
                                     partialPaidAmount += amountToPay
                                     onDismiss()
                                 },
