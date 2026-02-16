@@ -52,6 +52,18 @@ interface ProductDao {
     suspend fun clear()
 
 
+    @Query("""
+    SELECT * FROM products
+    WHERE 
+        (:foodType IS NULL OR foodType = :foodType)
+        AND searchCode = :code
+    ORDER BY sortOrder ASC, name ASC
+""")
+    fun searchExactCodeWithFoodType(
+        code: String,
+        foodType: String?
+    ): Flow<List<ProductEntity>>
+
 
 
 }

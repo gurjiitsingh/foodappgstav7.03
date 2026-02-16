@@ -67,6 +67,10 @@ object LanPrinter {
                 // ✅ ESC/POS INIT
                 output.write(byteArrayOf(0x1B, 0x40))
 
+
+// ✅ BEEP (Kitchen Alert)
+                output.write(byteArrayOf(0x1B, 0x42, 0x03, 0x02))
+
                 // ✅ Convert LF → CRLF for consistent printing
                 val safeText = text
                     .replace("\n", "\r\n")

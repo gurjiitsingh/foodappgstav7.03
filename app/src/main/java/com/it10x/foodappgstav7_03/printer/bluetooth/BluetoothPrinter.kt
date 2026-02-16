@@ -70,6 +70,11 @@ object BluetoothPrinter {
                 // ✅ ESC/POS INIT (ONCE)
                 output.write(byteArrayOf(0x1B, 0x40))
 
+                val beep = byteArrayOf(
+                    0x1B, 0x42, 0x03, 0x02
+                )
+                output.write(beep)
+
                 // ✅ IMPORTANT: convert LF → CRLF
                 val safeText = text
                     .replace("\n", "\r\n")

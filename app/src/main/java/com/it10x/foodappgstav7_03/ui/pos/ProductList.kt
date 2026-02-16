@@ -24,11 +24,12 @@ import com.it10x.foodappgstav7_03.viewmodel.PosTableViewModel
 @Composable
 fun ProductList(
     filteredProducts: List<ProductEntity>,
-    variants: List<ProductEntity>,
+   // variants: List<ProductEntity>,
     cartViewModel: CartViewModel,
     tableViewModel: PosTableViewModel,
     tableNo: String,
-    posSessionViewModel: PosSessionViewModel
+    posSessionViewModel: PosSessionViewModel,
+    onProductAdded: () -> Unit
 ) {
 
     val sessionId by posSessionViewModel.sessionId.collectAsState()
@@ -44,7 +45,11 @@ fun ProductList(
         verticalArrangement = Arrangement.spacedBy(0.dp),
         contentPadding = PaddingValues(0.dp)
     ) {
-        items(sortedProducts.size) { index ->
+        items(
+            count = sortedProducts.size,
+            key = { index -> sortedProducts[index].id }
+        ) { index ->
+
             val product = sortedProducts[index]
 
             ParentProductCard(
@@ -52,9 +57,11 @@ fun ProductList(
                 cartViewModel = cartViewModel,
                 tableViewModel = tableViewModel,
                 tableNo = tableNo,
-                sessionId = sessionId
+                sessionId = sessionId,
+                onProductAdded = onProductAdded
             )
         }
+
     }
 }
 
@@ -64,16 +71,17 @@ private fun ParentProductCard(
     cartViewModel: CartViewModel,
     tableViewModel: PosTableViewModel,
     tableNo: String,
-    sessionId: String
+    sessionId: String,
+    onProductAdded: () -> Unit
 ) {
 
     val cartItems by cartViewModel.cart.collectAsState()
 
-    val currentQty = remember(cartItems) {
-        cartItems
-            .filter { it.tableId == tableNo && it.productId == product.id }
-            .sumOf { it.quantity }
-    }
+
+
+    val currentQty = cartItems
+        .filter { it.tableId == tableNo && it.productId == product.id }
+        .sumOf { it.quantity }
 
     val productBg = MaterialTheme.colorScheme.background//MaterialTheme.colorScheme.surface
     val productText = MaterialTheme.colorScheme.onSurface
@@ -187,7 +195,8 @@ private fun ParentProductCard(
                                 tableId = tableNo
                             )
                         )
-                        tableViewModel.markOrdering(tableNo)
+                        onProductAdded()
+                         tableViewModel.markOrdering(tableNo)
                     },
                     modifier = Modifier
                         .size(width = 40.dp, height = 32.dp)

@@ -61,11 +61,11 @@ import com.it10x.foodappgstav7_03.ui.kitchen.KitchenViewModelFactory
 import androidx.compose.ui.graphics.Shape
 
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
+import com.it10x.foodappgstav7_03.data.pos.viewmodel.ProductsLocalViewModel
+import com.it10x.foodappgstav7_03.data.pos.viewmodel.ProductsLocalViewModelFactory
 
-enum class SearchTarget {
-    NAME,
-    CODE
-}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PosScreen(
@@ -76,12 +76,16 @@ fun PosScreen(
     posSessionViewModel: PosSessionViewModel,
     posTableViewModel: PosTableViewModel,
 ) {
+    // --- COMMON STYLING ---
+    val commonShape = RoundedCornerShape(8.dp)
+    val commonHeight = 52.dp
     var showTableSelector by rememberSaveable() {
         mutableStateOf(false)
     }
 
 
     var showSearchKeyboard by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val db = AppDatabaseProvider.get(context)
 
@@ -104,17 +108,21 @@ fun PosScreen(
         ?.tableName
  var selectedTableName = selectedTableName1 ?: ""
 
-    var activeTarget by rememberSaveable { mutableStateOf(SearchTarget.NAME) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
-    var codeQuery by rememberSaveable { mutableStateOf("") }
 
-    val repository = POSOrdersRepository(
-        db = db,
-        orderMasterDao = db.orderMasterDao(),
-        orderProductDao = db.orderProductDao(),
-        cartDao = db.cartDao(),
-        tableDao = db.tableDao()
+    val productsViewModel: ProductsLocalViewModel = viewModel(
+        factory = ProductsLocalViewModelFactory(db.productDao())
     )
+    val filteredProducts by productsViewModel.products.collectAsState()
+
+    val repository = remember {
+        POSOrdersRepository(
+            db = db,
+            orderMasterDao = db.orderMasterDao(),
+            orderProductDao = db.orderProductDao(),
+            cartDao = db.cartDao(),
+            tableDao = db.tableDao()
+        )
+    }
 
     LaunchedEffect(Unit) {
         cartViewModel.uiEvent.collect { event ->
@@ -145,64 +153,32 @@ fun PosScreen(
 
     val categories by db.categoryDao().getAll().collectAsState(initial = emptyList())
 
-    val allProducts by db.productDao().getAll().collectAsState(initial = emptyList())
-    val parentProducts = remember(allProducts) {
-        getParentProducts(allProducts)
-    }
+
+
 
     var selectedCatId by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(categories) {
         if (selectedCatId == null && categories.isNotEmpty()) {
-            selectedCatId = categories.first().id
+            val firstId = categories.first().id
+            selectedCatId = firstId
+            productsViewModel.setCategory(firstId)  // 🔥 VERY IMPORTANT
         }
     }
+
+
 
 
 
     LaunchedEffect(Unit) { tableVm.loadTables() }
 
 
-    val filteredProducts = remember(
-        parentProducts,
-        selectedCatId,
-        searchQuery,
-        codeQuery,
-        activeTarget
-    ) {
-        val query = when (activeTarget) {
-            SearchTarget.NAME -> searchQuery.trim().lowercase()
-            SearchTarget.CODE -> codeQuery.trim().lowercase()
-        }
-
-        if (query.isNotEmpty()) {
-            parentProducts.filter { product ->
-                when (activeTarget) {
-                    SearchTarget.NAME -> product.name.lowercase().contains(query)  // partial match for name
-                    SearchTarget.CODE -> product.searchCode?.lowercase() == query   // exact match for code
-                }
-            }
-        } else {
-            if (selectedCatId == null) emptyList()
-            else parentProducts.filter { it.categoryId == selectedCatId }
-        }
-    }
 
 
 
 
 
 
-    val variants = remember(allProducts) {
-        allProducts.filter {
-            it.type == "variant"
-        }
-    }
-
-    val variantsMap = remember(allProducts) {
-        allProducts
-            .filter { it.type == "variant" && it.parentId != null }
-            .groupBy { it.parentId }
-    }
 
 
 
@@ -225,6 +201,11 @@ fun PosScreen(
     var showBill by remember { mutableStateOf(false) }
     var showCategorySelector by remember { mutableStateOf(false) }
 
+    val parentProducts = filteredProducts.filter { it.parentId == null }
+
+    val variants = filteredProducts
+        .filter { it.parentId != null }
+        .groupBy { it.parentId!! }
 
     LaunchedEffect(orderType, tableId) {
         if (orderType == "DINE_IN" && !tableId.isNullOrBlank()) {
@@ -232,6 +213,11 @@ fun PosScreen(
         } else {
             cartViewModel.initSession(orderType)
         }
+    }
+    LaunchedEffect(orderType) {
+        searchQuery = ""
+       // productsViewModel.setSearchQuery("")
+        showSearchKeyboard = false
     }
 
     Box(
@@ -272,7 +258,7 @@ fun PosScreen(
                             onClick = {
                                 orderType = "DINE_IN"
                                 showTableSelector = true
-                                cartViewModel.initSession(orderType, tableId)
+                              //  cartViewModel.initSession(orderType, tableId)
                             },
                             shape = commonShape,
                             height = commonHeight
@@ -285,7 +271,7 @@ fun PosScreen(
                                 orderType = "TAKEAWAY"
                                 posSessionViewModel.clearTable()
                                 showTableSelector = false
-                                cartViewModel.initSession("TAKEAWAY")
+                              //  cartViewModel.initSession("TAKEAWAY")
                             },
                             shape = commonShape,
                             height = commonHeight
@@ -298,7 +284,7 @@ fun PosScreen(
                                 orderType = "DELIVERY"
                                 posSessionViewModel.clearTable()
                                 showTableSelector = false
-                                cartViewModel.initSession("DELIVERY")
+                               // cartViewModel.initSession("DELIVERY")
                             },
                             shape = commonShape,
                             height = commonHeight
@@ -336,12 +322,11 @@ fun PosScreen(
                         }
 
                         // --- NAME SEARCH ---
+                        // --------  SEARCH BOX TAB--------
                         Box(
                             modifier = Modifier
-                                .weight(1f)
+                                .fillMaxWidth()
                                 .clickable {
-                                    activeTarget = SearchTarget.NAME
-                                    codeQuery = ""
                                     showSearchKeyboard = true
                                 }
                         ) {
@@ -350,44 +335,21 @@ fun PosScreen(
                                 onValueChange = {},
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(commonHeight),
-                                placeholder = { Text("Search by name") },
+                                    .height(52.dp),
+                                placeholder = { Text("Search by name or code") },
                                 singleLine = true,
                                 readOnly = true,
-                                enabled = false,
-                                shape = commonShape
+                                enabled = false
                             )
                         }
 
-                        // --- CODE SEARCH ---
-                        Box(
-                            modifier = Modifier
-                                .weight(0.8f)
-                                .clickable {
-                                    activeTarget = SearchTarget.CODE
-                                    searchQuery = ""
-                                    showSearchKeyboard = true
-                                }
-                        ) {
-                            OutlinedTextField(
-                                value = codeQuery,
-                                onValueChange = {},
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(commonHeight),
-                                placeholder = { Text("Search by code") },
-                                singleLine = true,
-                                readOnly = true,
-                                enabled = false,
-                                shape = commonShape
-                            )
-                        }
 
                         // --- CLEAR BUTTON ---
                         IconButton(
                             onClick = {
                                 searchQuery = ""
-                                codeQuery = ""
+                                productsViewModel.setSearchQuery("")
+
                             },
                             modifier = Modifier
                                 .size(commonHeight)
@@ -406,11 +368,9 @@ fun PosScreen(
                 }
 
                 // ===== TABLET: SINGLE ROW =====
-                if (!isPhone) {
 
-                    val commonShape = RoundedCornerShape(8.dp)
-                    val commonHeight = 52.dp
 
+                if(!isPhone){
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -420,15 +380,10 @@ fun PosScreen(
                     ) {
 
                         // -------- ORDER TYPE BUTTONS --------
-
                         PosOrderTypeButton(
                             label = "Dine In",
                             selected = orderType == "DINE_IN",
-                            onClick = {
-                                orderType = "DINE_IN"
-                                showTableSelector = true
-                                cartViewModel.initSession(orderType, tableId)
-                            },
+                            onClick = { orderType = "DINE_IN"; showTableSelector = true },
                             shape = commonShape,
                             height = commonHeight
                         )
@@ -436,12 +391,7 @@ fun PosScreen(
                         PosOrderTypeButton(
                             label = "Takeaway",
                             selected = orderType == "TAKEAWAY",
-                            onClick = {
-                                orderType = "TAKEAWAY"
-                                posSessionViewModel.clearTable()
-                                showTableSelector = false
-                                cartViewModel.initSession("TAKEAWAY")
-                            },
+                            onClick = { orderType = "TAKEAWAY"; posSessionViewModel.clearTable(); showTableSelector = false },
                             shape = commonShape,
                             height = commonHeight
                         )
@@ -449,12 +399,7 @@ fun PosScreen(
                         PosOrderTypeButton(
                             label = "Delivery",
                             selected = orderType == "DELIVERY",
-                            onClick = {
-                                orderType = "DELIVERY"
-                                posSessionViewModel.clearTable()
-                                showTableSelector = false
-                                cartViewModel.initSession("DELIVERY")
-                            },
+                            onClick = { orderType = "DELIVERY"; posSessionViewModel.clearTable(); showTableSelector = false },
                             shape = commonShape,
                             height = commonHeight
                         )
@@ -473,184 +418,76 @@ fun PosScreen(
                         // -------- CATEGORY BUTTON --------
                         Button(
                             onClick = { showCategorySelector = true },
-                            modifier = Modifier.height(commonHeight),
-                            shape = commonShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                            modifier = Modifier.height(commonHeight), // set height here
+                            shape = commonShape, // set shape here
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text("Category")
                         }
 
-                        // -------- NAME SEARCH --------
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                                    activeTarget = SearchTarget.NAME
-                                    codeQuery = ""
-                                    showSearchKeyboard = true
-                                }
+                        // -------- SEARCH BOX + CLEAR --------
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = {},
+
+                            // SEARCH BOX
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(commonHeight),
-                                placeholder = { Text("Search by name") },
-                                singleLine = true,
-                                readOnly = true,
-                                enabled = false,
-                                shape = commonShape
-                            )
-                        }
-
-                        // -------- CODE SEARCH --------
-                        Box(
-                            modifier = Modifier
-                                .weight(0.8f)
-                                .clickable {
-                                    activeTarget = SearchTarget.CODE
-                                    searchQuery = ""
-                                    showSearchKeyboard = true
-                                }
-                        ) {
-                            OutlinedTextField(
-                                value = codeQuery,
-                                onValueChange = {},
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(commonHeight),
-                                placeholder = { Text("Search by code") },
-                                singleLine = true,
-                                readOnly = true,
-                                enabled = false,
-                                shape = commonShape
-                            )
-                        }
-
-                        // -------- CLEAR BUTTON --------
-                        IconButton(
-                            onClick = {
-                                searchQuery = ""
-                                codeQuery = ""
-                            },
-                            modifier = Modifier
-                                .size(commonHeight)
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = commonShape
-                                )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
-
-
-
-
-                // ---------- SEARCH BOX ----------
-
-
-
-// ---------- SEARCH Phone ROW(S) ----------
-                        if (isPhone) {
-                            // PHONE: TWO ROWS
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    .weight(1f)
+                                    .height(commonHeight)
+                                    .clickable { showSearchKeyboard = true }
                             ) {
-                                // ROW 1: NAME SEARCH
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            activeTarget = SearchTarget.NAME
-                                            codeQuery = ""
-                                            showSearchKeyboard = true
-                                        }
-                                ) {
-                                    OutlinedTextField(
-                                        value = searchQuery,
-                                        onValueChange = {
-                                            searchQuery = it
-                                            codeQuery = "" // clear other box
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(53.dp),
-                                        placeholder = { Text("Search by name") },
-                                        singleLine = true
+                                OutlinedTextField(
+                                    value = searchQuery,
+                                    onValueChange = {},
+                                    modifier = Modifier.fillMaxSize(),
+                                    placeholder = { Text("Search by name or code") },
+                                    singleLine = true,
+                                    readOnly = true,
+                                    enabled = false,
+                                    textStyle = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+
+                            // CLEAR BUTTON
+                            IconButton(
+                                onClick = {
+                                    searchQuery = ""
+                                    productsViewModel.setSearchQuery("")
+                                },
+                                modifier = Modifier
+                                    .size(commonHeight)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = commonShape
                                     )
-
-                                }
-
-                                // ROW 2: CODE SEARCH + CLEAR
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clickable {
-                                                activeTarget = SearchTarget.CODE
-                                                searchQuery = ""
-                                                showSearchKeyboard = true
-                                            }
-                                    ) {
-                                        OutlinedTextField(
-                                            value = codeQuery,
-                                            onValueChange = {
-                                                codeQuery = it
-                                                searchQuery = ""
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(53.dp),
-                                            placeholder = { Text("Search by code") },
-                                            singleLine = true
-                                        )
-
-                                    }
-
-                                    // SMALL LIGHT GRAY CLEAR BUTTON WITH X ICON
-                                    IconButton(
-                                        onClick = {
-                                            searchQuery = ""
-                                            codeQuery = ""
-                                        },
-                                        modifier = Modifier
-                                            .size(36.dp) // smaller
-                                            .background(Color.LightGray.copy(alpha = 0.3f), shape = RoundedCornerShape(8.dp))
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = "Clear",
-                                            tint = Color.DarkGray
-                                        )
-                                    }
-                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear",
+                                    tint = Color.White // make it visible
+                                )
                             }
                         }
+                    }
 
-
+                }
+                // ---------- SEARCH BOX ----------
 
 
                 ProductList(
                     filteredProducts = filteredProducts,
-                    variants = variants,
+                  //  variants = variants,
                     cartViewModel = cartViewModel,
                     tableViewModel = tableVm,
                     tableNo = tableId,  // fallback if null
-                    posSessionViewModel = posSessionViewModel  // 🔑 pass it
+                    posSessionViewModel = posSessionViewModel,  // 🔑 pass it
+                    onProductAdded = {
+                        searchQuery = ""
+                       // productsViewModel.setSearchQuery("")
+                    }
                 )
 
 
@@ -660,10 +497,15 @@ fun PosScreen(
                         selectedCatId = selectedCatId,
                         onCategorySelected = { id ->
                             selectedCatId = id
+                            productsViewModel.setCategory(id)   // 🔥 THIS IS REQUIRED
+                            showCategorySelector = false       // optional but recommended
+                            searchQuery = ""
+                            productsViewModel.setSearchQuery("")
                         },
                         onDismiss = { showCategorySelector = false }
                     )
                 }
+
 
 
 
@@ -678,8 +520,9 @@ fun PosScreen(
                                 tableId = table.id,
                                 tableName = table.tableName
                             )
+                            searchQuery = ""
                             // 🔹 Init DINE_IN session
-                            cartViewModel.initSession("DINE_IN", table.id)
+                            //cartViewModel.initSession("DINE_IN", table.id)
                             showTableSelector = false
                         },
 
@@ -690,6 +533,9 @@ fun PosScreen(
 
 
             }
+
+
+
 
             // ---------- CART (TABLET ONLY) ----------
 
@@ -732,57 +578,64 @@ fun PosScreen(
         // ---------- FLOATING KEYBOARD OVER PRODUCTS ----------
         if (showSearchKeyboard && !isPhone) {
 
-            // Dim background + dismiss
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .zIndex(50f)
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) {
-                        showSearchKeyboard = false
-                    }
-            )
-
-            // Keyboard aligned bottom and matching product width
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .zIndex(60f)
+                    .zIndex(100f)
             ) {
-                PosSearchKeyboardRight(
-                    onKeyPress = { char ->
-                        when (activeTarget) {
-                            SearchTarget.NAME -> searchQuery += char
-                            SearchTarget.CODE -> codeQuery += char
-                        }
-                    },
-                    onBackspace = {
-                        when (activeTarget) {
-                            SearchTarget.NAME ->
-                                if (searchQuery.isNotEmpty())
-                                    searchQuery = searchQuery.dropLast(1)
 
-                            SearchTarget.CODE ->
-                                if (codeQuery.isNotEmpty())
-                                    codeQuery = codeQuery.dropLast(1)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(12.dp)
+                ) {
+
+                    Column {
+
+                        // 🔴 CLOSE BUTTON (ONLY CLOSE METHOD)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                onClick = { showSearchKeyboard = false }
+                            ) {
+                                Text("Close")
+                            }
                         }
-                    },
-                    onClear = {
-                        when (activeTarget) {
-                            SearchTarget.NAME -> searchQuery = ""
-                            SearchTarget.CODE -> codeQuery = ""
-                        }
-                    },
-                    onClose = { showSearchKeyboard = false }
-                )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        PosSearchKeyboardRight(
+                            onKeyPress = { char ->
+                                searchQuery += char
+                                productsViewModel.setSearchQuery(searchQuery)
+                            },
+                            onBackspace = {
+                                if (searchQuery.isNotEmpty()) {
+                                    searchQuery = searchQuery.dropLast(1)
+                                    productsViewModel.setSearchQuery(searchQuery)
+                                }
+                            },
+                            onClear = {
+                                searchQuery = ""
+                                productsViewModel.setSearchQuery("")
+                            },
+                            onClose = {
+                                showSearchKeyboard = false
+                            }
+                        )
+                    }
+                }
             }
         }
+
+
+
+
+
 
 
         // ---------- MOBILE CART FAB ----------
@@ -844,7 +697,7 @@ fun PosScreen(
             factory = KitchenViewModelFactory(
                 app = LocalContext.current.applicationContext as android.app.Application,
                 tableId = tableId ?: orderType,
-                tableName = selectedTableName!!,
+                tableName = selectedTableName ?: "",
                 sessionId = sessionId!!,
                 orderType = orderType,
                 repository = repository,
@@ -912,7 +765,7 @@ fun PosScreen(
                         KitchenScreen(
                             sessionId = sessionId!!,
                             tableNo = tableId ?: orderType,
-                            tableName = selectedTableName!!,
+                            tableName = selectedTableName ?: "",
                             kitchenViewModel = kitchenViewModel,
                             cartViewModel = cartViewModel,
                             onKitchenEmpty = { showKitchen = false },
@@ -938,7 +791,7 @@ fun PosScreen(
         sessionId = sessionId,
         tableId = tableId,
         orderType = orderType,
-        selectedTableName = selectedTableName!!
+        selectedTableName = selectedTableName ?: ""
     )
 else{
         BillDialogPhone(
@@ -947,7 +800,7 @@ else{
             sessionId = sessionId,
             tableId = tableId,
             orderType = orderType,
-            selectedTableName = selectedTableName!!
+            selectedTableName = selectedTableName ?: ""
         )
     }
 
@@ -1113,121 +966,4 @@ fun toTitleCase(text: String): String {
 }
 
 
-@Composable
-fun OrderControlsSection(
-    orderType: String,
-    onOrderTypeChange: (String) -> Unit,
-    tableName: String?,
-    onTableSelect: () -> Unit,
-    searchQuery: String,
-    onSearchChange: (String) -> Unit,
-    isPhone: Boolean
-) {
-    if (isPhone) {
-        // ---------- MOBILE VERSION (2-3 ROWS) ----------
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            // Row 1: Order Types
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                PosOrderTypeButton(
-                    label = "Dine In",
-                    selected = orderType == "DINE_IN",
-                    onClick = { onOrderTypeChange("DINE_IN") }
-                )
 
-                PosOrderTypeButton(
-                    label = "Takeaway",
-                    selected = orderType == "TAKEAWAY",
-                    onClick = { onOrderTypeChange("TAKEAWAY") }
-                )
-
-                PosOrderTypeButton(
-                    label = "Delivery",
-                    selected = orderType == "DELIVERY",
-                    onClick = { onOrderTypeChange("DELIVERY") }
-                )
-            }
-
-            // Row 2: Table (if dine-in)
-            if (orderType == "DINE_IN" && tableName != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    OrderChip(
-                        label = tableName,
-                        selected = true,
-                        onClick = onTableSelect
-                    )
-                }
-            }
-
-            // Row 3: Search
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                placeholder = { Text("Search item or code") },
-                singleLine = true
-            )
-        }
-
-    } else {
-        // ---------- TABLET / DESKTOP VERSION (SINGLE ROW) ----------
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Order types
-            PosOrderTypeButton(
-                label = "Dine In",
-                selected = orderType == "DINE_IN",
-                onClick = { onOrderTypeChange("DINE_IN") }
-            )
-            PosOrderTypeButton(
-                label = "Takeaway",
-                selected = orderType == "TAKEAWAY",
-                onClick = { onOrderTypeChange("TAKEAWAY") }
-            )
-
-            PosOrderTypeButton(
-                label = "Delivery",
-                selected = orderType == "DELIVERY",
-                onClick = { onOrderTypeChange("DELIVERY") }
-            )
-
-            // Table (if dine-in)
-            if (orderType == "DINE_IN" && tableName != null) {
-                OrderChip(
-                    label = tableName,
-                    selected = true,
-                    onClick = onTableSelect
-                )
-            }
-
-            // Search box (right aligned)
-            Spacer(Modifier.weight(1f)) // Push search to the right
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                modifier = Modifier
-                    .widthIn(min = 220.dp, max = 280.dp)
-                    .height(52.dp),
-                placeholder = { Text("Search item or code") },
-                singleLine = true
-            )
-        }
-    }
-}
