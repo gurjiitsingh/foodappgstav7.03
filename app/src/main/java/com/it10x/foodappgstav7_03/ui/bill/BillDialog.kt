@@ -27,6 +27,7 @@ import com.it10x.foodappgstav7_03.ui.bill.BillViewModel
 import com.it10x.foodappgstav7_03.ui.bill.BillViewModelFactory
 import com.it10x.foodappgstav7_03.ui.payment.PaymentInput
 import com.it10x.foodappgstav7_03.ui.components.NumPad
+import java.util.Locale
 
 @Composable
 fun BillDialog(
@@ -41,7 +42,7 @@ fun BillDialog(
 
     val context = LocalContext.current
     //--------------- PHONE ---------------
-    val customerPhone = remember { mutableStateOf("") }
+
     var activeInput by remember { mutableStateOf<String?>(null) }
     val discountFlat = remember { mutableStateOf("") }
     val discountPercent = remember { mutableStateOf("") }
@@ -68,7 +69,29 @@ fun BillDialog(
             orderType = orderType
         )
     )
-    val totalAmount = billViewModel.uiState.value.total
+    val uiState = billViewModel.uiState.collectAsState()
+    val totalAmount = uiState.value.total
+    val suggestions = billViewModel.customerSuggestions.collectAsState()
+    LaunchedEffect(showBill) {
+        if (showBill) {
+
+            if (uiState.value.discountFlat > 0) {
+                discountFlat.value = uiState.value.discountFlat.toString()
+                discountPercent.value = ""
+                showDiscount = true
+            }
+            else if (uiState.value.discountPercent > 0) {
+                discountPercent.value = uiState.value.discountPercent.toString()
+                discountFlat.value = ""
+                showDiscount = true
+            }
+            else {
+                discountFlat.value = ""
+                discountPercent.value = ""
+            }
+        }
+    }
+
     val remainingAmount = (totalAmount - partialPaidAmount).coerceAtLeast(0.0)
     Dialog(
         onDismissRequest = onDismiss,
@@ -120,7 +143,7 @@ fun BillDialog(
                                     )
                                 ),
                                 name = "Customer",
-                                phone = customerPhone.value
+                                phone = uiState.value.customerPhone
                             )
 
                             onDismiss()
@@ -176,7 +199,7 @@ fun BillDialog(
                             .clickable { activeInput = "PHONE" }
                     ) {
                         OutlinedTextField(
-                            value = customerPhone.value,
+                            value = uiState.value.customerPhone,
                             onValueChange = {},
                             label = { Text("Customer Phone") },
                             readOnly = true,
@@ -184,7 +207,7 @@ fun BillDialog(
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
                                 disabledContainerColor =
-                                    if (activeInput == "PHONE") Color(0xFF2E3B2F)
+                                    if (activeInput == "PHONE") Color(0xFF1E2A22)  // darker green tone
                                     else Color(0xFF2A2A2A),
 
                                 disabledBorderColor =
@@ -200,15 +223,79 @@ fun BillDialog(
                                 .heightIn(min = 52.dp)   // 👈 keeps safe height
                         )
                     }
+                    if (suggestions.value.isNotEmpty() && activeInput == "PHONE") {
 
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF2A2A2A))
+                        ) {
+                            Column {
+                                suggestions.value.forEach { customer ->
 
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                billViewModel.setCustomerPhone(customer.phone)
+                                                billViewModel.clearCustomerSuggestions()
+                                                activeInput = null
+                                            }
+                                            .padding(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "${customer.phone}  (${customer.name})",
+                                            color = Color.White,
+                                            fontSize = 14.sp
+                                        )
+                                    }
 
-
-                    TextButton(
-                        onClick = { showDiscount = !showDiscount }
-                    ) {
-                        Text(if (showDiscount) "Hide Discount" else "Add Discount")
+                                    Divider(color = Color.DarkGray)
+                                }
+                            }
+                        }
                     }
+
+
+// DISCOUNT TOGGLE
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),   // 🔹 reduced top & bottom spacing
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+
+                        Text(
+                            text = "Enable Discount",
+                            fontSize = 14.sp,          // 🔹 smaller title
+                            color = Color.LightGray,
+                            fontWeight = FontWeight.Medium
+                        )
+
+                        Switch(
+                            checked = showDiscount,
+                            onCheckedChange = { showDiscount = it },
+                            colors = SwitchDefaults.colors(
+
+                                // 🔹 Enabled (ON) - Dark Orange Thumb
+                                checkedThumbColor = Color(0xFFE65100),      // dark orange
+                                checkedTrackColor = Color(0xFFFFCCBC),      // pastel orange track
+
+                                // 🔹 Disabled (OFF) - Soft Pastel Gray
+                                uncheckedThumbColor = Color(0xFFBDBDBD),
+                                uncheckedTrackColor = Color(0xFFE0E0E0),
+
+                                // optional: subtle border
+                                uncheckedBorderColor = Color(0xFFBDBDBD)
+                            )
+                        )
+                    }
+
+
+
 
 
 
@@ -238,17 +325,18 @@ fun BillDialog(
                                     readOnly = true,
                                     enabled = false,
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = if (activeInput == "FLAT") Color(
-                                            0xFF4CAF50
-                                        ) else Color.Gray,
-                                        unfocusedBorderColor = if (activeInput == "FLAT") Color(
-                                            0xFF4CAF50
-                                        ) else Color.Gray,
-                                        disabledBorderColor = if (activeInput == "FLAT") Color(
-                                            0xFF4CAF50
-                                        ) else Color.Gray,
-                                        disabledTextColor = Color.White
-                                    ),
+                                        disabledContainerColor =
+                                            if (activeInput == "FLAT") Color(0xFF1E2A22)
+                                            else Color(0xFF2A2A2A),
+
+                                        disabledBorderColor =
+                                            if (activeInput == "FLAT") Color(0xFF4CAF50)
+                                            else Color.Gray,
+
+                                        disabledTextColor = Color.White,
+                                        disabledLabelColor = Color.LightGray
+                                    )
+                                    ,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -268,18 +356,20 @@ fun BillDialog(
                                     onValueChange = {},
                                     label = { Text("%") },
                                     readOnly = true,
-                                    enabled = false, colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = if (activeInput == "PERCENT") Color(
-                                            0xFF4CAF50
-                                        ) else Color.Gray,
-                                        unfocusedBorderColor = if (activeInput == "PERCENT") Color(
-                                            0xFF4CAF50
-                                        ) else Color.Gray,
-                                        disabledBorderColor = if (activeInput == "PERCENT") Color(
-                                            0xFF4CAF50
-                                        ) else Color.Gray,
-                                        disabledTextColor = Color.White
-                                    ),
+                                    enabled = false,
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        disabledContainerColor =
+                                            if (activeInput == "PERCENT") Color(0xFF1E2A22)
+                                            else Color(0xFF2A2A2A),
+
+                                        disabledBorderColor =
+                                            if (activeInput == "PERCENT") Color(0xFF4CAF50)
+                                            else Color.Gray,
+
+                                        disabledTextColor = Color.White,
+                                        disabledLabelColor = Color.LightGray
+                                    )
+                                    ,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
@@ -301,108 +391,95 @@ fun BillDialog(
 
 
 
-
-
-
-
-
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-
-
-
-                    // ---------- CREDIT OR PAYLATER ----------
-
-
-
-
-
-
-
-
-
-
-// Track used payment methods to prevent duplicates
-
-
-
                     Spacer(Modifier.height(6.dp))
-                    Text("Select Options", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "Select Options",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp)
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         if (isCreditSelected) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-
+                                modifier = Modifier.fillMaxWidth()
                             ) {
 
-                                // ---------- CREDIT FIELD ----------
-                                Box(
+                                Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable {
-                                            activeInput = "CREDIT"
-                                        }
-                                ) {
-                                    OutlinedTextField(
-                                        value = creditAmount.value,
-                                        onValueChange = {},
-                                        label = { Text("Credit Amount") },
-                                        readOnly = true,
-                                        enabled = false,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-
-
-
-                                Spacer(modifier = Modifier.height(6.dp))
-
-                                // ---------- CREDIT NUMPAD ----------
-
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        .padding(vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
 
-                                    // ---------- CANCEL ----------
-                                    OutlinedButton(
+                                    // CREDIT INPUT (slightly smaller width)
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(0.75f)   // 🔹 reduce width
+                                            .clickable { activeInput = "CREDIT" }
+                                    ) {
+                                        OutlinedTextField(
+                                            value = creditAmount.value,
+                                            onValueChange = {},
+                                            label = { Text("Credit") },
+                                            readOnly = true,
+                                            enabled = false,
+                                            singleLine = true,
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                disabledContainerColor =
+                                                    if (activeInput == "CREDIT") Color(0xFF1E2A22)
+                                                    else Color(0xFF2A2A2A),
+
+                                                disabledBorderColor =
+                                                    if (activeInput == "CREDIT") Color(0xFFFFC107)
+                                                    else Color.Gray,
+
+                                                disabledTextColor = Color.White,
+                                                disabledLabelColor = Color.LightGray
+                                            ),
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+
+                                    // ❌ CANCEL
+                                    IconButton(
                                         onClick = {
                                             creditAmount.value = ""
                                             activeInput = null
                                             isCreditSelected = false
                                         },
                                         modifier = Modifier
-                                            .weight(1f)
-                                            .height(38.dp)
+                                            .size(42.dp)  // 🔹 slightly bigger
+                                            .background(
+                                                Color(0xFFD32F2F),
+                                                RoundedCornerShape(8.dp)
+                                            )
                                     ) {
-                                        Text("Cancel")
+                                        Text("✕", color = Color.White, fontSize = 16.sp)
                                     }
 
-                                    // ---------- CONFIRM ----------
-                                    Button(
+                                    // ✔ CONFIRM
+                                    IconButton(
                                         onClick = {
 
-                                            if (customerPhone.value.isBlank()) {
+                                            val phone = uiState.value.customerPhone.trim()
+
+                                            if (phone.length != 10) {
                                                 Toast.makeText(
                                                     context,
-                                                    "Phone number required for credit",
+                                                    "Enter valid 10 digit phone number",
                                                     Toast.LENGTH_SHORT
                                                 ).show()
-                                                return@Button
+                                                return@IconButton
                                             }
 
-                                            val amount = creditAmount.value.toDoubleOrNull() ?: return@Button
-
-                                            if (amount <= 0.0) return@Button
-                                            if (amount > remainingAmount) return@Button
+                                            val amount = creditAmount.value.toDoubleOrNull() ?: return@IconButton
+                                            if (amount <= 0.0) return@IconButton
+                                            if (amount > remainingAmount) return@IconButton
 
                                             paymentList.add(PaymentInput("CREDIT", amount))
                                             partialPaidAmount += amount
@@ -415,37 +492,59 @@ fun BillDialog(
                                                 billViewModel.payBill(
                                                     payments = paymentList.toList(),
                                                     name = "Customer",
-                                                    phone = customerPhone.value
+                                                    phone = uiState.value.customerPhone
                                                 )
                                                 onDismiss()
                                             } else {
                                                 showRemainingOptions = true
                                             }
                                         },
-
                                         modifier = Modifier
-                                            .weight(1f)
-                                            .height(38.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFFFFC107),
-                                            contentColor = Color.Black
-                                        )
+                                            .size(42.dp)
+                                            .background(
+                                                Color(0xFFFFC107),
+                                                RoundedCornerShape(8.dp)
+                                            )
                                     ) {
-                                        Text("Confirm")
+                                        Text("✔", color = Color.Black, fontSize = 16.sp)
                                     }
                                 }
+
                             }
+
                         }
 
 
                         // ---------- Buttons ----------
                         // Credit Button
                         Button(
-                            onClick = { isCreditSelected = true },
-                            //   enabled = customerPhone.isNotBlank() && creditAmount.isNotBlank(),
-                            modifier = Modifier.weight(1f).height(38.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107), contentColor = Color.Black)
-                        ) { Text("💳 Credit", fontSize = 13.sp) }
+                            onClick = {
+
+                                // 🔥 If already added credit before → reset it
+                                val existingCredit = paymentList.firstOrNull { it.mode == "CREDIT" }
+
+                                if (existingCredit != null) {
+                                    partialPaidAmount -= existingCredit.amount
+                                    paymentList.remove(existingCredit)
+                                }
+
+                                // Reset input
+                                creditAmount.value = ""
+                                activeInput = "CREDIT"
+                                isCreditSelected = true
+                                showRemainingOptions = false
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFFFC107),
+                                contentColor = Color.Black
+                            )
+                        ) {
+                            Text("💳 Credit", fontSize = 13.sp)
+                        }
+
 
                         // Pay Later Button
                         Button(
@@ -453,10 +552,12 @@ fun BillDialog(
 
 
                                 val amount = creditAmount.value.toDoubleOrNull() ?: 0.0
-                                if (customerPhone.value.isBlank()) {
+                                val phone = uiState.value.customerPhone.trim()
+
+                                if (phone.length != 10) {
                                     Toast.makeText(
                                         context,
-                                        "Phone number required for delivery",
+                                        "Enter valid 10 digit phone number",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                     return@Button
@@ -468,7 +569,7 @@ fun BillDialog(
                                             PaymentInput("DELIVERY_PENDING", remainingAmount)
                                         ),
                                         name = "Customer",
-                                        phone = customerPhone.value
+                                        phone = uiState.value.customerPhone
                                     )
 
                                     usedPaymentModes.add("PENDING")
@@ -483,8 +584,11 @@ fun BillDialog(
 
                     if (showRemainingOptions && remainingAmount > 0) {
                         Spacer(Modifier.height(8.dp))
-                        Text("Pay Remaining: ₹$remainingAmount", style = MaterialTheme.typography.titleSmall)
-                        Text("Using following methods")
+                        Text(
+                            text = "Pay Remaining: ₹${String.format(Locale.getDefault(), "%.2f", remainingAmount)} Use following methods",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Text("")
 
                     }
 
@@ -511,7 +615,7 @@ fun BillDialog(
                                     billViewModel.payBill(
                                         payments = finalPayments,
                                         name = "Customer",
-                                        phone = customerPhone.value
+                                        phone = uiState.value.customerPhone
                                     )
 
 
@@ -536,7 +640,7 @@ fun BillDialog(
                                     billViewModel.payBill(
                                         payments = finalPayments,
                                         name = "Customer",
-                                        phone = customerPhone.value
+                                        phone = uiState.value.customerPhone
                                     )
 
                                     partialPaidAmount += amountToPay
@@ -566,7 +670,7 @@ fun BillDialog(
                                     billViewModel.payBill(
                                         payments = finalPayments,
                                         name = "Customer",
-                                        phone = customerPhone.value
+                                        phone = uiState.value.customerPhone
                                     )
 
                                     partialPaidAmount += amountToPay
@@ -588,7 +692,7 @@ fun BillDialog(
                                     billViewModel.payBill(
                                         payments = finalPayments,
                                         name = "Customer",
-                                        phone = customerPhone.value
+                                        phone = uiState.value.customerPhone
                                     )
 
 
@@ -616,17 +720,17 @@ fun BillDialog(
                         Divider()
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        NumPad { label ->
-                            handleInput(
-                                label = label,
-                                activeInput = activeInput,
-                                customerPhone = customerPhone,
-                                discountFlat = discountFlat,
-                                discountPercent = discountPercent,
-                                creditAmount = creditAmount,
-                                billViewModel = billViewModel
-                            )
-                        }
+                    NumPad { label ->
+                        handleInput(
+                            label = label,
+                            activeInput = activeInput,
+                            uiState = uiState.value,
+                            discountFlat = discountFlat,
+                            discountPercent = discountPercent,
+                            creditAmount = creditAmount,
+                            billViewModel = billViewModel
+                        )
+                    }
 
 
 
@@ -650,25 +754,52 @@ fun BillDialog(
 fun handleInput(
     label: String,
     activeInput: String?,
-    customerPhone: MutableState<String>,
+    uiState: BillUiState,
     discountFlat: MutableState<String>,
     discountPercent: MutableState<String>,
     creditAmount: MutableState<String>,
     billViewModel: BillViewModel
-) {
+){
     when (activeInput) {
 
         "PHONE" -> {
             when (label) {
-                "←" -> if (customerPhone.value.isNotEmpty())
-                    customerPhone.value = customerPhone.value.dropLast(1)
 
-                "." -> {}
+                "←" -> {
+                    if (uiState.customerPhone.isNotEmpty()) {
 
-                else -> if (customerPhone.value.length < 10)
-                    customerPhone.value += label
+                        val newPhone = uiState.customerPhone.dropLast(1)
+                        billViewModel.setCustomerPhone(newPhone)
+
+                        if (newPhone.length in 3..9) {
+                            billViewModel.observeCustomerSuggestions(newPhone)
+                        } else {
+                            billViewModel.clearCustomerSuggestions()
+                        }
+                    }
+                }
+
+                "." -> {
+                    // ignore dot
+                }
+
+                else -> {
+                    if (uiState.customerPhone.length < 10) {
+
+                        val newPhone = uiState.customerPhone + label
+                        billViewModel.setCustomerPhone(newPhone)
+
+                        if (newPhone.length in 3..9) {
+                            billViewModel.observeCustomerSuggestions(newPhone)
+                        } else {
+                            billViewModel.clearCustomerSuggestions()
+                        }
+                    }
+                }
             }
         }
+
+
 
         "FLAT" -> {
             when (label) {

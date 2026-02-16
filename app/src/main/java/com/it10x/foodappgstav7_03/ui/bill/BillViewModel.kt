@@ -40,6 +40,9 @@ import com.it10x.foodappgstav7_03.data.pos.dao.PosCustomerDao
 import com.it10x.foodappgstav7_03.data.pos.dao.PosCustomerLedgerDao
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerEntity
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerLedgerEntity
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.update
+
 class BillViewModel(
     private val kotItemDao: KotItemDao,
     private val orderMasterDao: OrderMasterDao,
@@ -74,7 +77,8 @@ class BillViewModel(
     private val _discountFlat = MutableStateFlow(0.0)
     private val _discountPercent = MutableStateFlow(0.0)
 
-
+    private val _customerSuggestions = MutableStateFlow<List<PosCustomerEntity>>(emptyList())
+    val customerSuggestions: StateFlow<List<PosCustomerEntity>> = _customerSuggestions
 
 
 
@@ -86,6 +90,12 @@ class BillViewModel(
     fun setPercentDiscount(value: Double) {
         _discountPercent.value = value.coerceAtLeast(0.0)
         _discountFlat.value = 0.0 // reset flat
+    }
+
+    fun setCustomerPhone(phone: String) {
+        _uiState.update {
+            it.copy(customerPhone = phone)
+        }
     }
 
   //  val outletInfo: StateFlow<OutletInfo> = outletRepository.outletInfo
@@ -164,20 +174,33 @@ class BillViewModel(
                 val finalTotal = (subtotal + tax - appliedDiscount)
                     .coerceAtLeast(0.0)
 
-                _uiState.value = BillUiState(
-                    loading = false,
-                    items = billingItems,
-                    subtotal = subtotal,
-                    tax = tax,
-                    discountFlat = flat,
-                    discountPercent = percent,
-                    discountApplied = appliedDiscount,
-                    total = finalTotal
-                )
+                _uiState.update { old ->
+
+                    old.copy(
+                        loading = false,
+                        items = billingItems,
+                        subtotal = subtotal,
+                        tax = tax,
+                        discountFlat = flat,
+                        discountPercent = percent,
+                        discountApplied = appliedDiscount,
+                        total = finalTotal
+                    )
+                }
             }
         }
     }
 
+    fun resetBillUi() {
+        _discountFlat.value = 0.0
+        _discountPercent.value = 0.0
+
+        _uiState.update {
+            it.copy(
+                customerPhone = ""
+            )
+        }
+    }
 
     private fun loadCurrency() {
         viewModelScope.launch {
@@ -518,6 +541,8 @@ class BillViewModel(
             }
 
             printOrder(orderMaster, orderItems)
+
+            resetBillUi()
         }
     }
 
@@ -588,6 +613,8 @@ class BillViewModel(
 
             val allItems = kotItemDao.getItemsForTableSync(tableId)
 
+
+
             Log.d("EDIT_DEBUG", "DB items count=${allItems.size}")
 
             val groupedItems = allItems.filter {
@@ -631,7 +658,31 @@ class BillViewModel(
     }
 
 
+    private var searchJob: Job? = null
+
+    fun observeCustomerSuggestions(phone: String) {
+
+        if (phone.length < 3) {
+            _customerSuggestions.value = emptyList()
+            searchJob?.cancel()
+            return
+        }
+
+        searchJob?.cancel()
+
+        searchJob = viewModelScope.launch {
+            customerDao.searchCustomersByPhone(phone)
+                .collectLatest { result ->
+                    _customerSuggestions.value = result
+                   // Log.d("SUGGEST", "Found: ${result.size}")
+                }
+        }
+    }
 
 
+
+    fun clearCustomerSuggestions() {
+        _customerSuggestions.value = emptyList()
+    }
 
 }

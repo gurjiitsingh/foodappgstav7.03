@@ -2,6 +2,7 @@ package com.it10x.foodappgstav7_03.data.pos.dao
 
 import androidx.room.*
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PosCustomerDao {
@@ -58,7 +59,24 @@ interface PosCustomerDao {
     suspend fun getAllCustomers(): List<PosCustomerEntity>
 
 
+//    @Query("""
+//    SELECT * FROM pos_customers
+//    WHERE phone LIKE :query || '%'
+//    ORDER BY createdAt DESC
+//    LIMIT 5
+//""")
+//    fun searchCustomersByPhone(query: String): Flow<List<PosCustomerEntity>>
+
+//    @Query("SELECT * FROM pos_customers WHERE phone LIKE :query || '%' LIMIT 5")
+//    fun searchCustomersByPhone(query: String): Flow<List<PosCustomerEntity>>
 
 
+    @Query("""
+    SELECT * FROM pos_customers 
+    WHERE phone LIKE :query || '%' 
+    ORDER BY createdAt DESC 
+    LIMIT 5
+""")
+    fun searchCustomersByPhone(query: String): Flow<List<PosCustomerEntity>>
 
 }
