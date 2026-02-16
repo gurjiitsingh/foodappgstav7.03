@@ -105,8 +105,15 @@ private fun ParentProductCard(
                 else -> product.discountPrice
             }
 
+            val code = product.searchCode?.trim()
+            val numericCode = code?.takeIf { it.all { ch -> ch.isDigit() } }
+
+            val displayName = numericCode?.let {
+                "${product.name} $it"
+            } ?: product.name
+
             Text(
-                text = toTitleCase(product.name),
+                text = toTitleCase(displayName),
                 minLines = 2,
                 maxLines = 2,
                 lineHeight = 18.sp,
@@ -124,22 +131,6 @@ private fun ParentProductCard(
                     color = productText,
                     style = MaterialTheme.typography.bodySmall
                 )
-
-                val code = product.searchCode?.trim()
-                val isValidCode = !code.isNullOrEmpty() &&
-                        code.lowercase() != "null" &&
-                        code != "0" &&
-                        code != "N/A" &&
-                        code != "-"
-
-                if (isValidCode) {
-                    Text(
-                        text = code!!,
-                        color = productText.copy(alpha = 0.6f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
             }
 
             Row(

@@ -44,6 +44,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -56,6 +57,10 @@ import com.it10x.foodappgstav7_03.ui.bill.BillViewModel
 import com.it10x.foodappgstav7_03.ui.bill.BillViewModelFactory
 import com.it10x.foodappgstav7_03.ui.cart.CartUiEvent
 import com.it10x.foodappgstav7_03.ui.kitchen.KitchenViewModelFactory
+
+import androidx.compose.ui.graphics.Shape
+
+import androidx.compose.ui.unit.dp
 
 enum class SearchTarget {
     NAME,
@@ -238,34 +243,6 @@ fun PosScreen(
 
         Row(modifier = Modifier.fillMaxSize()) {
 
-            // ---------- LEFT CATEGORY SIDEBAR ----------
-//            Column(
-//                modifier = Modifier
-//                    .width(140.dp)
-//                    .fillMaxHeight()
-//                    .background(MaterialTheme.colorScheme.surface)
-//                    .padding(15.dp)   // ✅ SAME AS PRODUCTS
-//            ) {
-//
-//
-//
-//                Spacer(Modifier.height(8.dp))
-//
-//                LazyColumn {
-//                    items(categories) { c ->
-//                        CategoryButton(
-//                            label = toTitleCase(c.name),
-//                            selected = selectedCatId == c.id,
-//                          //  showSearchKeyboard = false
-//                        ) {
-//                            selectedCatId = c.id
-//                        }
-//                        Spacer(Modifier.height(8.dp))
-//                    }
-//                }
-//            }
-
-
 
             // ---------- PRODUCTS ----------
             Column(
@@ -276,14 +253,19 @@ fun PosScreen(
 
                 // ---------- ORDER CONTROLS ----------
                 if (isPhone) {
-                    // ===== MOBILE: 2 ROWS =====
-                    // Row 1: Dine In + Takeaway
+
+                    val commonShape = RoundedCornerShape(8.dp)
+                    val commonHeight = 52.dp
+
+                    // ===== ROW 1 : ORDER TYPES + CATEGORY =====
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
+
                         PosOrderTypeButton(
                             label = "Dine In",
                             selected = orderType == "DINE_IN",
@@ -291,8 +273,11 @@ fun PosScreen(
                                 orderType = "DINE_IN"
                                 showTableSelector = true
                                 cartViewModel.initSession(orderType, tableId)
-                            }
+                            },
+                            shape = commonShape,
+                            height = commonHeight
                         )
+
                         PosOrderTypeButton(
                             label = "Takeaway",
                             selected = orderType == "TAKEAWAY",
@@ -301,17 +286,11 @@ fun PosScreen(
                                 posSessionViewModel.clearTable()
                                 showTableSelector = false
                                 cartViewModel.initSession("TAKEAWAY")
-                            }
+                            },
+                            shape = commonShape,
+                            height = commonHeight
                         )
-                    }
 
-                    // Row 2: Delivery + Table Chip
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
                         PosOrderTypeButton(
                             label = "Delivery",
                             selected = orderType == "DELIVERY",
@@ -320,145 +299,259 @@ fun PosScreen(
                                 posSessionViewModel.clearTable()
                                 showTableSelector = false
                                 cartViewModel.initSession("DELIVERY")
-                            }
+                            },
+                            shape = commonShape,
+                            height = commonHeight
                         )
+
+                        Button(
+                            onClick = { showCategorySelector = true },
+                            modifier = Modifier.height(commonHeight),
+                            shape = commonShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("Category")
+                        }
+                    }
+
+                    // ===== ROW 2 : TABLE + SEARCH + CLEAR =====
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
 
                         if (orderType == "DINE_IN" && tableName != null) {
                             OrderChip(
                                 label = tableName!!,
                                 selected = true,
-                                onClick = { showTableSelector = true }
+                                onClick = { showTableSelector = true },
+                                shape = commonShape,
+                                height = commonHeight
+                            )
+                        }
+
+                        // --- NAME SEARCH ---
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    activeTarget = SearchTarget.NAME
+                                    codeQuery = ""
+                                    showSearchKeyboard = true
+                                }
+                        ) {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(commonHeight),
+                                placeholder = { Text("Search by name") },
+                                singleLine = true,
+                                readOnly = true,
+                                enabled = false,
+                                shape = commonShape
+                            )
+                        }
+
+                        // --- CODE SEARCH ---
+                        Box(
+                            modifier = Modifier
+                                .weight(0.8f)
+                                .clickable {
+                                    activeTarget = SearchTarget.CODE
+                                    searchQuery = ""
+                                    showSearchKeyboard = true
+                                }
+                        ) {
+                            OutlinedTextField(
+                                value = codeQuery,
+                                onValueChange = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(commonHeight),
+                                placeholder = { Text("Search by code") },
+                                singleLine = true,
+                                readOnly = true,
+                                enabled = false,
+                                shape = commonShape
+                            )
+                        }
+
+                        // --- CLEAR BUTTON ---
+                        IconButton(
+                            onClick = {
+                                searchQuery = ""
+                                codeQuery = ""
+                            },
+                            modifier = Modifier
+                                .size(commonHeight)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = commonShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
                 }
+
                 // ===== TABLET: SINGLE ROW =====
                 if (!isPhone) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    PosOrderTypeButton(
-                        label = "Dine In",
-                        selected = orderType == "DINE_IN",
-                        onClick = {
-                            orderType = "DINE_IN"
-                            showTableSelector = true
-                            cartViewModel.initSession(orderType, tableId)
-                        }
-                    )
 
-                    PosOrderTypeButton(
-                        label = "Takeaway",
-                        selected = orderType == "TAKEAWAY",
-                        onClick = {
-                            orderType = "TAKEAWAY"
-                            posSessionViewModel.clearTable()
-                            showTableSelector = false
-                            cartViewModel.initSession("TAKEAWAY")
-                        }
-                    )
+                    val commonShape = RoundedCornerShape(8.dp)
+                    val commonHeight = 52.dp
 
-                    PosOrderTypeButton(
-                        label = "Delivery",
-                        selected = orderType == "DELIVERY",
-                        onClick = {
-                            orderType = "DELIVERY"
-                            posSessionViewModel.clearTable()
-                            showTableSelector = false
-                            cartViewModel.initSession("DELIVERY")
-                        }
-                    )
-
-                    if (orderType == "DINE_IN" && tableName != null) {
-                        OrderChip(
-                            label = tableName!!,
-                            selected = true,
-                            onClick = { showTableSelector = true }
-                        )
-                    }
-
-                    // --- CATEGORY SELECTOR BUTTON ---
-                    Button(
-                        onClick = { showCategorySelector = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("Select Category", color = MaterialTheme.colorScheme.onPrimary)
-                    }
-
-
-                    // NAME SEARCH
-                    Box(
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .clickable {
-                                activeTarget = SearchTarget.NAME
-                                codeQuery = ""
-                                showSearchKeyboard = true
-                            }
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = {},
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(53.dp),
-                            placeholder = { Text("Search by name") },
-                            singleLine = true,
-                            readOnly = true,
-                            enabled = false
+
+                        // -------- ORDER TYPE BUTTONS --------
+
+                        PosOrderTypeButton(
+                            label = "Dine In",
+                            selected = orderType == "DINE_IN",
+                            onClick = {
+                                orderType = "DINE_IN"
+                                showTableSelector = true
+                                cartViewModel.initSession(orderType, tableId)
+                            },
+                            shape = commonShape,
+                            height = commonHeight
                         )
-                    }
 
-                    // CODE SEARCH
-
-                    Box(
-                        modifier = Modifier
-                            .weight(0.9f) // 👈 was 1f — slightly shorter
-                            .clickable {
-                                activeTarget = SearchTarget.CODE
-                                searchQuery = ""
-                                showSearchKeyboard = true
-                            }
-                    ) {
-                        OutlinedTextField(
-                            value = codeQuery,
-                            onValueChange = {},
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(53.dp),
-
-                            placeholder = { Text("Search by code") },
-                            singleLine = true,
-                            readOnly = true,
-                            enabled = false
+                        PosOrderTypeButton(
+                            label = "Takeaway",
+                            selected = orderType == "TAKEAWAY",
+                            onClick = {
+                                orderType = "TAKEAWAY"
+                                posSessionViewModel.clearTable()
+                                showTableSelector = false
+                                cartViewModel.initSession("TAKEAWAY")
+                            },
+                            shape = commonShape,
+                            height = commonHeight
                         )
-                    }
 
-                    // CLEAR BUTTON
-                    IconButton(
-                        onClick = {
-                            searchQuery = ""
-                            codeQuery = ""
-                        },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(
-                                Color.LightGray.copy(alpha = 0.4f),
-                                shape = RoundedCornerShape(8.dp)
+                        PosOrderTypeButton(
+                            label = "Delivery",
+                            selected = orderType == "DELIVERY",
+                            onClick = {
+                                orderType = "DELIVERY"
+                                posSessionViewModel.clearTable()
+                                showTableSelector = false
+                                cartViewModel.initSession("DELIVERY")
+                            },
+                            shape = commonShape,
+                            height = commonHeight
+                        )
+
+                        // -------- TABLE CHIP --------
+                        if (orderType == "DINE_IN" && tableName != null) {
+                            OrderChip(
+                                label = tableName!!,
+                                selected = true,
+                                onClick = { showTableSelector = true },
+                                shape = commonShape,
+                                height = commonHeight
                             )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Clear",
-                            tint = Color.White // 👈 white X
-                        )
-                    }
+                        }
 
+                        // -------- CATEGORY BUTTON --------
+                        Button(
+                            onClick = { showCategorySelector = true },
+                            modifier = Modifier.height(commonHeight),
+                            shape = commonShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("Category")
+                        }
+
+                        // -------- NAME SEARCH --------
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    activeTarget = SearchTarget.NAME
+                                    codeQuery = ""
+                                    showSearchKeyboard = true
+                                }
+                        ) {
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(commonHeight),
+                                placeholder = { Text("Search by name") },
+                                singleLine = true,
+                                readOnly = true,
+                                enabled = false,
+                                shape = commonShape
+                            )
+                        }
+
+                        // -------- CODE SEARCH --------
+                        Box(
+                            modifier = Modifier
+                                .weight(0.8f)
+                                .clickable {
+                                    activeTarget = SearchTarget.CODE
+                                    searchQuery = ""
+                                    showSearchKeyboard = true
+                                }
+                        ) {
+                            OutlinedTextField(
+                                value = codeQuery,
+                                onValueChange = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(commonHeight),
+                                placeholder = { Text("Search by code") },
+                                singleLine = true,
+                                readOnly = true,
+                                enabled = false,
+                                shape = commonShape
+                            )
+                        }
+
+                        // -------- CLEAR BUTTON --------
+                        IconButton(
+                            onClick = {
+                                searchQuery = ""
+                                codeQuery = ""
+                            },
+                            modifier = Modifier
+                                .size(commonHeight)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = commonShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
-            }
+
 
 
 
@@ -946,30 +1039,43 @@ fun FloatingCartButton(
     }
 }
 
-
 @Composable
 fun OrderChip(
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    shape: Shape = MaterialTheme.shapes.small,
+    height: Dp = 52.dp
 ) {
     Surface(
         color = if (selected)
             MaterialTheme.colorScheme.primary
         else
             MaterialTheme.colorScheme.surface,
-        shape = MaterialTheme.shapes.small,
+        shape = shape,
         tonalElevation = 2.dp,
-        modifier = Modifier.clickable { onClick() }
+        modifier = Modifier
+            .height(height)
+            .clickable { onClick() }
     ) {
-        Text(
-            text = label,
-            color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 14.dp)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label,
+                color = if (selected)
+                    MaterialTheme.colorScheme.onPrimary
+                else
+                    MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
     }
 }
+
 
 
 
@@ -978,40 +1084,25 @@ fun OrderChip(
 fun PosOrderTypeButton(
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    shape: Shape = RoundedCornerShape(8.dp),   // ✅ add this
+    height: Dp = 52.dp                         // ✅ add this
 ) {
-    Surface(
-        color = if (selected)
-            MaterialTheme.colorScheme.primary
-        else
-            MaterialTheme.colorScheme.surface,
-        shape = MaterialTheme.shapes.small,
-        tonalElevation = 2.dp,
-        border = if (!selected) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
-        modifier = Modifier
-            .height(36.dp)
-            .clickable { onClick() }
+    Button(
+        onClick = onClick,
+        modifier = Modifier.height(height),
+        shape = shape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected)
+                MaterialTheme.colorScheme.primary
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
-        Box(
-            modifier = Modifier.padding(horizontal = 14.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = label,
-                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.labelLarge
-            )
-        }
+        Text(label)
     }
-
-
-
-
-
-
-
-
 }
+
 fun toTitleCase(text: String): String {
     return text
         .lowercase()
@@ -1045,9 +1136,23 @@ fun OrderControlsSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                PosOrderTypeButton("Dine In", orderType == "DINE_IN") { onOrderTypeChange("DINE_IN") }
-                PosOrderTypeButton("Takeaway", orderType == "TAKEAWAY") { onOrderTypeChange("TAKEAWAY") }
-                PosOrderTypeButton("Delivery", orderType == "DELIVERY") { onOrderTypeChange("DELIVERY") }
+                PosOrderTypeButton(
+                    label = "Dine In",
+                    selected = orderType == "DINE_IN",
+                    onClick = { onOrderTypeChange("DINE_IN") }
+                )
+
+                PosOrderTypeButton(
+                    label = "Takeaway",
+                    selected = orderType == "TAKEAWAY",
+                    onClick = { onOrderTypeChange("TAKEAWAY") }
+                )
+
+                PosOrderTypeButton(
+                    label = "Delivery",
+                    selected = orderType == "DELIVERY",
+                    onClick = { onOrderTypeChange("DELIVERY") }
+                )
             }
 
             // Row 2: Table (if dine-in)
@@ -1086,9 +1191,22 @@ fun OrderControlsSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Order types
-            PosOrderTypeButton("Dine In", orderType == "DINE_IN") { onOrderTypeChange("DINE_IN") }
-            PosOrderTypeButton("Takeaway", orderType == "TAKEAWAY") { onOrderTypeChange("TAKEAWAY") }
-            PosOrderTypeButton("Delivery", orderType == "DELIVERY") { onOrderTypeChange("DELIVERY") }
+            PosOrderTypeButton(
+                label = "Dine In",
+                selected = orderType == "DINE_IN",
+                onClick = { onOrderTypeChange("DINE_IN") }
+            )
+            PosOrderTypeButton(
+                label = "Takeaway",
+                selected = orderType == "TAKEAWAY",
+                onClick = { onOrderTypeChange("TAKEAWAY") }
+            )
+
+            PosOrderTypeButton(
+                label = "Delivery",
+                selected = orderType == "DELIVERY",
+                onClick = { onOrderTypeChange("DELIVERY") }
+            )
 
             // Table (if dine-in)
             if (orderType == "DINE_IN" && tableName != null) {
