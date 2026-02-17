@@ -10,34 +10,52 @@ class ProductsLocalViewModel(
     private val dao: ProductDao
 ) : ViewModel() {
 
+
+
     // ---------------- SEARCH STATE ----------------
     private val _searchQuery = MutableStateFlow("")
     private val _selectedCategory = MutableStateFlow<String?>(null)
 
     // ---------------- PUBLIC PRODUCTS FLOW ----------------
+
+    // NEW: trigger "More" key
+    private val _showMoreMatches = MutableStateFlow(false)
+
+
+
     val products: StateFlow<List<ProductEntity>> =
-        combine(_searchQuery, _selectedCategory) { query, category ->
-            query.trim() to category
-        }.flatMapLatest { (query, category) ->
+        combine(_searchQuery, _selectedCategory, _showMoreMatches) { query, category, more ->
+            Triple(query.trim(), category, more)
+        }.flatMapLatest { (query, category, showMore) ->
 
             when {
                 query.isNotEmpty() -> {
                     val isNumeric = query.all { it.isDigit() }
 
                     if (isNumeric) {
-                        // Numeric search: use DAO code search
                         dao.searchExactCodeWithFoodType(query, null)
                     } else {
-                        // Text search: get all products and filter manually
                         dao.getAll().map { allProducts ->
                             val lowerQuery = query.lowercase()
 
-                            // Step 1: iterate each product and its words in order
-                            allProducts.filter { product ->
-                                val words = product.name.split(" ")
-                                words.any { word ->
-                                    word.lowercase().startsWith(lowerQuery)
+                            // 🔹 First-word progressive match
+                            val firstWordMatches = allProducts.filter { product ->
+                                val firstWord = product.name.split(" ").firstOrNull()?.lowercase() ?: ""
+                                firstWord.startsWith(lowerQuery)
+                            }
+
+                            if (!showMore) {
+                                firstWordMatches
+                            } else {
+                                // 🔹 "More" key pressed → search in remaining words
+                                val otherWordMatches = allProducts.filter { product ->
+                                    val words = product.name.split(" ").drop(1).map { it.lowercase() }
+                                    words.any { it.startsWith(lowerQuery) }
                                 }
+                                    .filter { it !in firstWordMatches } // avoid duplicates
+
+                                // 🔹 Combine first-word matches + other-word matches
+                                firstWordMatches + otherWordMatches
                             }
                         }
                     }
@@ -51,6 +69,77 @@ class ProductsLocalViewModel(
             SharingStarted.WhileSubscribed(5000),
             emptyList()
         )
+
+//    val products: StateFlow<List<ProductEntity>> =
+//        combine(_searchQuery, _selectedCategory) { query, category ->
+//            query.trim() to category
+//        }.flatMapLatest { (query, category) ->
+//
+//            when {
+//                query.isNotEmpty() -> {
+//                    val isNumeric = query.all { it.isDigit() }
+//
+//                    if (isNumeric) {
+//                        dao.searchExactCodeWithFoodType(query, null)
+//                    } else {
+//                        dao.getAll().map { allProducts ->
+//                            val lowerQuery = query.lowercase()
+//
+//                            allProducts.filter { product ->
+//                                val firstWord = product.name.split(" ").firstOrNull()?.lowercase() ?: ""
+//                                firstWord.startsWith(lowerQuery)
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                category != null -> dao.getByCategory(category)
+//                else -> dao.getAll()
+//            }
+//        }.stateIn(
+//            viewModelScope,
+//            SharingStarted.WhileSubscribed(5000),
+//            emptyList()
+//        )
+
+
+
+//    val products: StateFlow<List<ProductEntity>> =
+//        combine(_searchQuery, _selectedCategory) { query, category ->
+//            query.trim() to category
+//        }.flatMapLatest { (query, category) ->
+//
+//            when {
+//                query.isNotEmpty() -> {
+//                    val isNumeric = query.all { it.isDigit() }
+//
+//                    if (isNumeric) {
+//                        // Numeric search: use DAO code search
+//                        dao.searchExactCodeWithFoodType(query, null)
+//                    } else {
+//                        // Text search: get all products and filter manually
+//                        dao.getAll().map { allProducts ->
+//                            val lowerQuery = query.lowercase()
+//
+//                            // Step 1: iterate each product and its words in order
+//                            allProducts.filter { product ->
+//                                val words = product.name.split(" ")
+//                                words.any { word ->
+//                                    word.lowercase().startsWith(lowerQuery)
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                category != null -> dao.getByCategory(category)
+//                else -> dao.getAll()
+//            }
+//        }.stateIn(
+//            viewModelScope,
+//            SharingStarted.WhileSubscribed(5000),
+//            emptyList()
+//        )
 
 
 
@@ -104,6 +193,8 @@ class ProductsLocalViewModel(
 //                emptyList()
 //            )
 
+
+
     // ---------------- FUNCTIONS ----------------
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -111,5 +202,9 @@ class ProductsLocalViewModel(
 
     fun setCategory(categoryId: String?) {
         _selectedCategory.value = categoryId
+    }
+
+    fun showMoreMatches(enable: Boolean) {
+        _showMoreMatches.value = enable
     }
 }

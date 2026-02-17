@@ -14,21 +14,15 @@ fun PosSearchKeyboardRight(
     onKeyPress: (String) -> Unit,
     onBackspace: () -> Unit,
     onClear: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onMore: () -> Unit            // 🔹 NEW
 ) {
 
-    // 🔥 Get screen width
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-
     val maxButtonsInRow = 14
     val totalSpacing = 6.dp * (maxButtonsInRow - 1)
-
-// 🔥 Calculate dynamic width
     val calculatedWidth = (screenWidth - totalSpacing - 12.dp) / maxButtonsInRow
-
-// 🔥 LIMIT MAX WIDTH (IMPORTANT FIX)
     val buttonWidth = minOf(calculatedWidth, 48.dp)
-
 
     Column(
         modifier = Modifier
@@ -65,7 +59,7 @@ fun PosSearchKeyboardRight(
                     letterRows[i].forEach { key ->
                         KeyButtonStyled(
                             label = key,
-                            width = buttonWidth,   // 🔥 UPDATED
+                            width = buttonWidth,
                             height = 42.dp
                         ) { onKeyPress(key) }
                     }
@@ -73,6 +67,7 @@ fun PosSearchKeyboardRight(
                     if (i == 2) {
                         // 🔥 Bottom row extra buttons
                         KeyButtonStyled("CLEAR", buttonWidth, 42.dp) { onClear() }
+                        KeyButtonStyled("More", buttonWidth, 42.dp) { onMore() }   // 🔹 NEW
                         KeyButtonStyled("OK", buttonWidth, 42.dp) { onClose() }
                         KeyButtonStyled("⌫", buttonWidth, 42.dp) { onBackspace() }
                     }
@@ -86,7 +81,7 @@ fun PosSearchKeyboardRight(
                     numberColumns[i].forEach { key ->
                         KeyButtonStyled(
                             label = key,
-                            width = buttonWidth,   // 🔥 UPDATED
+                            width = buttonWidth,
                             height = 42.dp
                         ) { onKeyPress(key) }
                     }
@@ -95,6 +90,7 @@ fun PosSearchKeyboardRight(
         }
     }
 }
+
 
 
 

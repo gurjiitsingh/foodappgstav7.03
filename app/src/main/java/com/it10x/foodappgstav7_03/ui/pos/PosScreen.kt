@@ -1,5 +1,6 @@
 package com.it10x.foodappgstav7_03.ui.pos
 
+import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -76,6 +77,8 @@ fun PosScreen(
     posSessionViewModel: PosSessionViewModel,
     posTableViewModel: PosTableViewModel,
 ) {
+
+
     // --- COMMON STYLING ---
     val commonShape = RoundedCornerShape(8.dp)
     val commonHeight = 52.dp
@@ -123,6 +126,15 @@ fun PosScreen(
             tableDao = db.tableDao()
         )
     }
+
+
+//    val hasHardwareKeyboard =
+//        LocalConfiguration.current.keyboard != Configuration.KEYBOARD_NOKEYS
+//    if (hasHardwareKeyboard) {
+//        PosHardwareKeyboardHelp(...)
+//    } else {
+//        PosTouchKeyboard(...)
+//    }
 
     LaunchedEffect(Unit) {
         cartViewModel.uiEvent.collect { event ->
@@ -625,7 +637,8 @@ fun PosScreen(
                             },
                             onClose = {
                                 showSearchKeyboard = false
-                            }
+                            },
+                            onMore = { productsViewModel.showMoreMatches(true) }
                         )
                     }
                 }
