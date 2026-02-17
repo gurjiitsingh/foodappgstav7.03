@@ -53,6 +53,7 @@ import com.it10x.foodappgstav7_03.ui.customer.CustomerViewModel
 import com.it10x.foodappgstav7_03.ui.customer.CustomerViewModelFactory
 import com.it10x.foodappgstav7_03.ui.delivery.DeliverySettlementScreen
 import com.it10x.foodappgstav7_03.ui.delivery.DeliverySettlementViewModel
+import com.it10x.foodappgstav7_03.ui.pos.ClassicPosScreen
 import com.it10x.foodappgstav7_03.ui.pos.PosSessionViewModel
 
 import com.it10x.foodappgstav7_03.ui.sales.SalesScreen
@@ -232,6 +233,33 @@ fun NavigationHost(
             )
 
             PosScreen(
+                navController = navController,
+                onOpenSettings = {
+                    navController.navigate("printer_role_selection")
+                },
+                ordersViewModel = posOrdersViewModel,
+                posSessionViewModel = posSessionViewModel,
+                cartViewModel = cartViewModel,
+                posTableViewModel = posTableViewModel
+            )
+        }
+
+        composable("posClassic") {
+
+            val context = LocalContext.current
+            val db = AppDatabaseProvider.get(context)
+
+            val cartViewModel: CartViewModel = viewModel(
+                factory = CartViewModelFactory(
+                    repository = CartRepository(
+                        db.cartDao(),
+                        db.tableDao()
+                    ),
+                    tableReleaseUseCase = tableReleaseUseCase
+                )
+            )
+
+            ClassicPosScreen(
                 navController = navController,
                 onOpenSettings = {
                     navController.navigate("printer_role_selection")

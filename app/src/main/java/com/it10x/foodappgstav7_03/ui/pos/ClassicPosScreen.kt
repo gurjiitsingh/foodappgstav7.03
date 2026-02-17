@@ -42,6 +42,8 @@ import android.widget.Toast
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -60,17 +62,26 @@ import com.it10x.foodappgstav7_03.ui.cart.CartUiEvent
 import com.it10x.foodappgstav7_03.ui.kitchen.KitchenViewModelFactory
 
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.input.ImeAction
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
+import com.it10x.foodappgstav7_03.com.it10x.foodappgstav7_03.ui.pos.ProductListClassic
+import com.it10x.foodappgstav7_03.data.pos.entities.PosCartEntity
 import com.it10x.foodappgstav7_03.data.pos.viewmodel.ProductsLocalViewModel
 import com.it10x.foodappgstav7_03.data.pos.viewmodel.ProductsLocalViewModelFactory
 import com.it10x.foodappgstav7_03.ui.components.PosTouchKeyboard
 
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.runtime.remember
+import androidx.compose.ui.input.key.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PosScreen(
+fun ClassicPosScreen(
     navController: NavController,
     cartViewModel: CartViewModel,
     onOpenSettings: () -> Unit,
@@ -112,7 +123,9 @@ fun PosScreen(
         ?.tableName
  var selectedTableName = selectedTableName1 ?: ""
 
-
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
+    var showSearchResults by remember { mutableStateOf(false) }
     val productsViewModel: ProductsLocalViewModel = viewModel(
         factory = ProductsLocalViewModelFactory(db.productDao())
     )
@@ -215,7 +228,7 @@ fun PosScreen(
     var showCategorySelector by remember { mutableStateOf(false) }
 
     val parentProducts = filteredProducts.filter { it.parentId == null }
-
+    var pendingQty by remember { mutableStateOf("") }
     val variants = filteredProducts
         .filter { it.parentId != null }
         .groupBy { it.parentId!! }
@@ -251,139 +264,12 @@ fun PosScreen(
             ) {
 
                 // ---------- ORDER CONTROLS ----------
-                if (isPhone) {
 
-                    val commonShape = RoundedCornerShape(8.dp)
-                    val commonHeight = 52.dp
-
-                    // ===== ROW 1 : ORDER TYPES + CATEGORY =====
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-
-                        PosOrderTypeButton(
-                            label = "Dine In",
-                            selected = orderType == "DINE_IN",
-                            onClick = {
-                                orderType = "DINE_IN"
-                                showTableSelector = true
-                              //  cartViewModel.initSession(orderType, tableId)
-                            },
-                            shape = commonShape,
-                            height = commonHeight
-                        )
-
-                        PosOrderTypeButton(
-                            label = "Takeaway",
-                            selected = orderType == "TAKEAWAY",
-                            onClick = {
-                                orderType = "TAKEAWAY"
-                                posSessionViewModel.clearTable()
-                                showTableSelector = false
-                              //  cartViewModel.initSession("TAKEAWAY")
-                            },
-                            shape = commonShape,
-                            height = commonHeight
-                        )
-
-                        PosOrderTypeButton(
-                            label = "Delivery",
-                            selected = orderType == "DELIVERY",
-                            onClick = {
-                                orderType = "DELIVERY"
-                                posSessionViewModel.clearTable()
-                                showTableSelector = false
-                               // cartViewModel.initSession("DELIVERY")
-                            },
-                            shape = commonShape,
-                            height = commonHeight
-                        )
-
-                        Button(
-                            onClick = { showCategorySelector = true },
-                            modifier = Modifier.height(commonHeight),
-                            shape = commonShape,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Text("Category")
-                        }
-                    }
-
-                    // ===== ROW 2 : TABLE + SEARCH + CLEAR =====
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-
-                        if (orderType == "DINE_IN" && tableName != null) {
-                            OrderChip(
-                                label = tableName!!,
-                                selected = true,
-                                onClick = { showTableSelector = true },
-                                shape = commonShape,
-                                height = commonHeight
-                            )
-                        }
-
-                        // --- NAME SEARCH ---
-                        // --------  SEARCH BOX TAB--------
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    showSearchKeyboard = true
-                                }
-                        ) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = {},
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(52.dp),
-                                placeholder = { Text("Search by name or code") },
-                                singleLine = true,
-                                readOnly = true,
-                                enabled = false
-                            )
-                        }
-
-
-                        // --- CLEAR BUTTON ---
-                        IconButton(
-                            onClick = {
-                                searchQuery = ""
-                                productsViewModel.setSearchQuery("")
-
-                            },
-                            modifier = Modifier
-                                .size(commonHeight)
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = commonShape
-                                )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                }
 
                 // ===== TABLET: SINGLE ROW =====
 
 
-                if(!isPhone){
+                if (!isPhone) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -393,7 +279,7 @@ fun PosScreen(
                     ) {
 
                         // -------- ORDER TYPE BUTTONS --------
-                        PosOrderTypeButton(
+                        ClassicPosOrderTypeButton(
                             label = "Dine In",
                             selected = orderType == "DINE_IN",
                             onClick = { orderType = "DINE_IN"; showTableSelector = true },
@@ -401,25 +287,33 @@ fun PosScreen(
                             height = commonHeight
                         )
 
-                        PosOrderTypeButton(
+                        ClassicPosOrderTypeButton(
                             label = "Takeaway",
                             selected = orderType == "TAKEAWAY",
-                            onClick = { orderType = "TAKEAWAY"; posSessionViewModel.clearTable(); showTableSelector = false },
+                            onClick = {
+                                orderType =
+                                    "TAKEAWAY"; posSessionViewModel.clearTable(); showTableSelector =
+                                false
+                            },
                             shape = commonShape,
                             height = commonHeight
                         )
 
-                        PosOrderTypeButton(
+                        ClassicPosOrderTypeButton(
                             label = "Delivery",
                             selected = orderType == "DELIVERY",
-                            onClick = { orderType = "DELIVERY"; posSessionViewModel.clearTable(); showTableSelector = false },
+                            onClick = {
+                                orderType =
+                                    "DELIVERY"; posSessionViewModel.clearTable(); showTableSelector =
+                                false
+                            },
                             shape = commonShape,
                             height = commonHeight
                         )
 
                         // -------- TABLE CHIP --------
                         if (orderType == "DINE_IN" && tableName != null) {
-                            OrderChip(
+                            ClassicOrderChip(
                                 label = tableName!!,
                                 selected = true,
                                 onClick = { showTableSelector = true },
@@ -438,70 +332,176 @@ fun PosScreen(
                             Text("Category")
                         }
 
-                        // -------- SEARCH BOX + CLEAR --------
-                        Row(
-                            modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+
+                    }
+
+                }
+
+
+
+
+
+
+
+
+                // -------- SEARCH BOX + CLEAR TAB--------
+                Column {
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = {
+                                searchQuery = it
+                                productsViewModel.setSearchQuery(it)
+                                showSearchResults = it.isNotBlank()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(commonHeight)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged {
+                                    if (it.isFocused) {
+                                        keyboardController?.hide()   // 🔥 THIS HIDES SYSTEM KEYBOARD
+                                    }
+                                },
+                            placeholder = { Text("Search by name or code") },
+                            singleLine = true
+                        )
+
+
+                        IconButton(
+                            onClick = {
+                                searchQuery = ""
+                                productsViewModel.setSearchQuery("")
+                                showSearchResults = false
+                            },
+                            modifier = Modifier
+                                .size(commonHeight)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = commonShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear"
+                            )
+                        }
+                    }
+
+                    // ---------- SEARCH RESULT DROPDOWN ----------
+                    if (showSearchResults && searchQuery.isNotBlank()) {
+
+                        val results = filteredProducts.take(10)
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                                .heightIn(max = 300.dp)
+                                .onPreviewKeyEvent { event ->
+                                    if (event.type == KeyEventType.KeyDown &&
+                                        event.key == Key.Enter
+                                    ) {
+
+                                        val first = results.firstOrNull()
+                                        if (first != null) {
+                                            cartViewModel.addToCart(
+                                                PosCartEntity(
+                                                    productId = first.id,
+                                                    name = first.name,
+                                                    basePrice = first.price,
+                                                    note = "",
+                                                    modifiersJson = "",
+                                                    quantity = 1,
+                                                    taxRate = first.taxRate ?: 0.0,
+                                                    taxType = first.taxType ?: "inclusive",
+                                                    parentId = null,
+                                                    isVariant = false,
+                                                    categoryId = first.categoryId,
+                                                    sessionId = sessionId ?: "",
+                                                    tableId = tableId
+                                                )
+                                            )
+                                        }
+
+                                        searchQuery = ""
+                                        productsViewModel.setSearchQuery("")
+                                        showSearchResults = false
+
+                                        // 🔥 return focus to search box
+                                        focusRequester.requestFocus()
+
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                },
+                            tonalElevation = 8.dp,
+                            shadowElevation = 8.dp,
+                            shape = MaterialTheme.shapes.small
                         ) {
 
-                            // SEARCH BOX
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(commonHeight)
-                                    .clickable { showSearchKeyboard = true }
-                            ) {
-                                OutlinedTextField(
-                                    value = searchQuery,
-                                    onValueChange = {},
-                                    modifier = Modifier.fillMaxSize(),
-                                    placeholder = { Text("Search by name or code") },
-                                    singleLine = true,
-                                    readOnly = true,
-                                    enabled = false,
-                                    textStyle = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+                            LazyColumn {
 
-                            // CLEAR BUTTON
-                            IconButton(
-                                onClick = {
-                                    searchQuery = ""
-                                    productsViewModel.setSearchQuery("")
-                                },
-                                modifier = Modifier
-                                    .size(commonHeight)
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceVariant,
-                                        shape = commonShape
+                                items(results) { product ->
+
+                                    ListItem(
+                                        headlineContent = {
+                                            Text(product.name)
+                                        },
+                                        supportingContent = {
+                                            Text("₹${product.price}")
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+
+                                                cartViewModel.addToCart(
+                                                    PosCartEntity(
+                                                        productId = product.id,
+                                                        name = product.name,
+                                                        basePrice = product.price,
+                                                        note = "",
+                                                        modifiersJson = "",
+                                                        quantity = 1,
+                                                        taxRate = product.taxRate ?: 0.0,
+                                                        taxType = product.taxType ?: "inclusive",
+                                                        parentId = null,
+                                                        isVariant = false,
+                                                        categoryId = product.categoryId,
+                                                        sessionId = sessionId ?: "",
+                                                        tableId = tableId
+                                                    )
+                                                )
+
+                                                searchQuery = ""
+                                                productsViewModel.setSearchQuery("")
+                                                showSearchResults = false
+
+                                                // 🔥 return focus after click too
+                                                focusRequester.requestFocus()
+                                            }
                                     )
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Clear",
-                                    tint = Color.White // make it visible
-                                )
+
+                                    Divider()
+                                }
                             }
                         }
                     }
 
                 }
-                // ---------- SEARCH BOX ----------
 
 
-                ProductList(
-                    filteredProducts = filteredProducts,
-                  //  variants = variants,
-                    cartViewModel = cartViewModel,
-                    tableViewModel = tableVm,
-                    tableNo = tableId,  // fallback if null
-                    posSessionViewModel = posSessionViewModel,  // 🔑 pass it
-                    onProductAdded = {
-                        searchQuery = ""
-                       // productsViewModel.setSearchQuery("")
-                    }
-                )
+
+
+
+
+
 
 
                 if (showCategorySelector) {
@@ -589,52 +589,7 @@ fun PosScreen(
 
 
         // ---------- FLOATING KEYBOARD OVER PRODUCTS ----------
-        if (showSearchKeyboard && !isPhone) {
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .zIndex(100f)
-            ) {
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(12.dp)
-                ) {
-
-                    Column {
-
-
-
-                      //  Spacer(modifier = Modifier.height(8.dp))
-
-                        PosTouchKeyboard(
-                            onKeyPress = { char ->
-                                searchQuery += char
-                                productsViewModel.setSearchQuery(searchQuery)
-                            },
-                            onBackspace = {
-                                if (searchQuery.isNotEmpty()) {
-                                    searchQuery = searchQuery.dropLast(1)
-                                    productsViewModel.setSearchQuery(searchQuery)
-                                }
-                            },
-                            onClear = {
-                                searchQuery = ""
-                                productsViewModel.setSearchQuery("")
-                            },
-                            onClose = {
-                                showSearchKeyboard = false
-                            },
-                            onMore = { productsViewModel.showMoreMatches(true) }
-                        )
-                    }
-                }
-            }
-        }
 
 
 
@@ -645,7 +600,7 @@ fun PosScreen(
         // ---------- MOBILE CART FAB ----------
 //        if (isPhone && cartCount > 0) {
         if (isPhone) {
-            FloatingCartButton(
+            ClassicFloatingCartButton(
                 count = cartCount,
                 onClick = { showCartSheet = true },
                 modifier = Modifier
@@ -814,7 +769,7 @@ else{
 // ================= CATEGORY BUTTON =================
 
 @Composable
-fun CategoryButton(
+fun ClassicCategoryButton(
     label: String,
     selected: Boolean,
     onClick: () -> Unit
@@ -859,7 +814,7 @@ fun CategoryButton(
 
 
 @Composable
-fun FloatingCartButton(
+fun ClassicFloatingCartButton(
     count: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -897,7 +852,7 @@ fun FloatingCartButton(
 }
 
 @Composable
-fun OrderChip(
+fun ClassicOrderChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -938,7 +893,7 @@ fun OrderChip(
 
 
 @Composable
-fun PosOrderTypeButton(
+fun ClassicPosOrderTypeButton(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -960,14 +915,7 @@ fun PosOrderTypeButton(
     }
 }
 
-fun toTitleCase(text: String): String {
-    return text
-        .lowercase()
-        .split(" ")
-        .joinToString(" ") { word ->
-            word.replaceFirstChar { it.uppercase() }
-        }
-}
+
 
 
 

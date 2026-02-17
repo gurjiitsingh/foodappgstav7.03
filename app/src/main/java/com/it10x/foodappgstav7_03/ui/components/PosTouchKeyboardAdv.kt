@@ -16,28 +16,28 @@ import androidx.compose.ui.unit.sp
    ========================= */
 
 // --- Key height presets ---
-val KEY_HEIGHT_56 = 56.dp
-val KEY_HEIGHT_64 = 64.dp   // ✅ recommended default
-val KEY_HEIGHT_72 = 72.dp
+val _KEY_HEIGHT_56 = 56.dp
+val _KEY_HEIGHT_64 = 64.dp   // ✅ recommended default
+val _KEY_HEIGHT_72 = 72.dp
 
 // --- Font size presets ---
-val FONT_18 = 18.sp
-val FONT_22 = 22.sp   // ✅ recommended default
-val FONT_26 = 26.sp
+val _FONT_18 = 18.sp
+val _FONT_22 = 22.sp   // ✅ recommended default
+val _FONT_26 = 26.sp
 
 // --- Spacing presets ---
-val SPACE_6 = 6.dp
-val SPACE_8 = 8.dp   // ✅ recommended default
-val SPACE_10 = 10.dp
+val _SPACE_6 = 6.dp
+val _SPACE_8 = 8.dp   // ✅ recommended default
+val _SPACE_10 = 10.dp
 
 // --- Space key width presets ---
-val SPACE_WEIGHT_SMALL = 1.5f
-val SPACE_WEIGHT_MEDIUM = 2f   // ✅ recommended default
-val SPACE_WEIGHT_BIG = 2.5f
+val _SPACE_WEIGHT_SMALL = 1.5f
+val _SPACE_WEIGHT_MEDIUM = 2f   // ✅ recommended default
+val _SPACE_WEIGHT_BIG = 2.5f
 
 
 @Composable
-fun PosTouchKeyboard(
+fun PosTouchKeyboardAdv(
     onKeyPress: (String) -> Unit,
     onBackspace: () -> Unit,
     onClear: () -> Unit,
@@ -46,10 +46,10 @@ fun PosTouchKeyboard(
 ) {
 
     // ✅ choose active preset here
-    val keyHeight = KEY_HEIGHT_56
-    val fontSize = FONT_22
-    val spacing = SPACE_8
-    val spaceWeight = SPACE_WEIGHT_MEDIUM
+    val keyHeight = _KEY_HEIGHT_56
+    val fontSize = _FONT_22
+    val spacing = _SPACE_8
+    val spaceWeight = _SPACE_WEIGHT_MEDIUM
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -74,7 +74,7 @@ fun PosTouchKeyboard(
                 // Row 1 (Numbers)
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
                     listOf("1","2","3","4","5","6","7","8","9","0").forEach {
-                        KeyBig(it, keyHeight, fontSize, Modifier.weight(1f)) {
+                        KeyBigAdv(it, keyHeight, fontSize, Modifier.weight(1f)) {
                             onKeyPress(it)
                         }
                     }
@@ -82,8 +82,8 @@ fun PosTouchKeyboard(
 
                 // Row 2
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                    listOf("Q","W","E","R","T","Y","U","I","O","P").forEach {
-                        KeyBig(it, keyHeight, fontSize, Modifier.weight(1f)) {
+                    listOf("Q","W","E","R","T","Y","U","I").forEach {
+                        KeyBigAdv(it, keyHeight, fontSize, Modifier.weight(1f)) {
                             onKeyPress(it)
                         }
                     }
@@ -91,8 +91,8 @@ fun PosTouchKeyboard(
 
                 // Row 3
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                    listOf("A","S","D","F","G","H","J","K","L").forEach {
-                        KeyBig(it, keyHeight, fontSize, Modifier.weight(1f)) {
+                    listOf("A","S","D","F","G","H","J","K").forEach {
+                        KeyBigAdv(it, keyHeight, fontSize, Modifier.weight(1f)) {
                             onKeyPress(it)
                         }
                     }
@@ -100,13 +100,13 @@ fun PosTouchKeyboard(
 
                 // Row 4
                 Row(horizontalArrangement = Arrangement.spacedBy(spacing)) {
-                    listOf("Z","X","C","V","B","N","M",".").forEach {
-                        KeyBig(it, keyHeight, fontSize, Modifier.weight(1f)) {
+                    listOf("Z","X","C","V","B","N",".").forEach {
+                        KeyBigAdv(it, keyHeight, fontSize, Modifier.weight(1f)) {
                             onKeyPress(it)
                         }
                     }
 
-                    KeyBig("⌫", keyHeight, fontSize, Modifier.weight(1f)) {
+                    KeyBigAdv("⌫", keyHeight, fontSize, Modifier.weight(1f)) {
                         onBackspace()
                     }
                 }
@@ -114,23 +114,23 @@ fun PosTouchKeyboard(
 
             // 🔹 RIGHT ACTION COLUMN
             Column(
-                modifier = Modifier.weight(0.5f),
+                modifier = Modifier.weight(0.6f),
                 verticalArrangement = Arrangement.spacedBy(spacing)
             ) {
-                KeyBig("CLOSE", keyHeight, fontSize, Modifier.fillMaxWidth()) {
+                KeyBigAdv("OK", keyHeight, fontSize, Modifier.fillMaxWidth()) {
                     onClose()
                 }
 
 
 
-                KeyBig("More.", keyHeight, fontSize, Modifier.fillMaxWidth()) {
+                KeyBigAdv("More", keyHeight, fontSize, Modifier.fillMaxWidth()) {
                     onMore()
                 }
-                KeyBig("DEL", keyHeight, fontSize, Modifier.fillMaxWidth()) {
+                KeyBigAdv("CLEAR", keyHeight, fontSize, Modifier.fillMaxWidth()) {
                     onClear()
                 }
 
-                KeyBig("SPACE", keyHeight, fontSize, Modifier.fillMaxWidth()) {
+                KeyBigAdv("SPACE", keyHeight, fontSize, Modifier.fillMaxWidth()) {
                     onKeyPress(" ")
                 }
 
@@ -149,7 +149,7 @@ fun PosTouchKeyboard(
 
 
 @Composable
-fun KeyBig(
+fun KeyBigAdv(
     label: String,
     height: Dp,
     fontSize: androidx.compose.ui.unit.TextUnit,
@@ -160,13 +160,13 @@ fun KeyBig(
     val isNumber = label.all { it.isDigit() }
 
     val backgroundColor = when (label) {
-        "CLOSE" -> androidx.compose.ui.graphics.Color(0xFF43A047)
-        "DEL" -> androidx.compose.ui.graphics.Color(0xFFD32F2F)
+        "OK" -> androidx.compose.ui.graphics.Color(0xFF43A047)
+        "CLEAR" -> androidx.compose.ui.graphics.Color(0xFFD32F2F)
         else -> androidx.compose.ui.graphics.Color.White
     }
 
     val textColor = when (label) {
-        "CLOSE", "DEL" -> androidx.compose.ui.graphics.Color.White
+        "OK", "CLEAR" -> androidx.compose.ui.graphics.Color.White
         else -> androidx.compose.ui.graphics.Color.Black
     }
 
@@ -206,7 +206,7 @@ fun KeyBig(
 
 
 //@Composable
-//fun KeyBig(
+//fun KeyBigAdv(
 //    label: String,
 //    height: Dp,
 //    fontSize: androidx.compose.ui.unit.TextUnit,
@@ -261,7 +261,7 @@ fun KeyBig(
 
 
 //@Composable
-//fun KeyBig(
+//fun KeyBigAdv(
 //    label: String,
 //    height: Dp,
 //    fontSize: androidx.compose.ui.unit.TextUnit,
