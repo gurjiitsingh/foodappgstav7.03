@@ -165,14 +165,31 @@ class BillViewModel(
 
 
 
+//                val subtotal = billingItems.sumOf { it.itemtotal }
+//                val tax = billingItems.sumOf { it.taxTotal }
+//
+//                val percentValue = subtotal * (percent / 100.0)
+//                val appliedDiscount = if (flat > 0) flat else percentValue
+//
+//                val finalTotal = (subtotal + tax - appliedDiscount)
+//                    .coerceAtLeast(0.0)
+
                 val subtotal = billingItems.sumOf { it.itemtotal }
-                val tax = billingItems.sumOf { it.taxTotal }
+                val totalTax = billingItems.sumOf { it.taxTotal }
 
                 val percentValue = subtotal * (percent / 100.0)
-                val appliedDiscount = if (flat > 0) flat else percentValue
+                val discount = if (flat > 0) flat else percentValue
 
-                val finalTotal = (subtotal + tax - appliedDiscount)
-                    .coerceAtLeast(0.0)
+                val safeDiscount = discount.coerceAtMost(subtotal)
+
+                val taxAfterDiscount =
+                    if (subtotal == 0.0) 0.0
+                    else totalTax * (1 - safeDiscount / subtotal)
+
+                val finalTotal = (subtotal - safeDiscount) + taxAfterDiscount
+
+
+
 
                 _uiState.update { old ->
 
@@ -180,13 +197,25 @@ class BillViewModel(
                         loading = false,
                         items = billingItems,
                         subtotal = subtotal,
-                        tax = tax,
+                        tax = taxAfterDiscount,
                         discountFlat = flat,
                         discountPercent = percent,
-                        discountApplied = appliedDiscount,
+                        discountApplied = safeDiscount,
                         total = finalTotal
                     )
                 }
+
+//                _uiState.update {
+//                    it.copy(
+//                        subtotal = subtotal,
+//                        tax = taxAfterDiscount,
+//                        discountApplied = safeDiscount,
+//                        total = finalTotal
+//                    )
+//                }
+
+
+
             }
         }
     }

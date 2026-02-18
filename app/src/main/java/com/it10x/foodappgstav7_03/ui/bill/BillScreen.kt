@@ -183,11 +183,12 @@ fun BillScreen(
         Spacer(Modifier.height(6.dp))
 
         BillRow("Sub Total", state.subtotal, currency)
-        BillRow("Tax", state.tax, currency)
-
         if (state.discountApplied > 0) {
             BillRow("Discount", -state.discountApplied, currency)
         }
+        BillRow("Tax", state.tax, currency)
+
+
 
         BillRow("Grand Total", state.total, currency, bold = true)
     }
