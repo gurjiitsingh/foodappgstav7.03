@@ -2,6 +2,8 @@ package com.it10x.foodappgstav7_03.ui.settings
 
 import android.app.Application
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -49,6 +51,7 @@ fun SyncScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -60,7 +63,6 @@ fun SyncScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ===== OUTLET SYNC =====
         Button(
             enabled = !outletSyncing && !productSyncing,
             onClick = { outletVm.syncOutlet() },
@@ -72,7 +74,6 @@ fun SyncScreen(
 
         Divider()
 
-        // ===== MENU SYNC =====
         Button(
             enabled = !productSyncing && !outletSyncing,
             onClick = { productVm.syncAll() },
@@ -84,7 +85,6 @@ fun SyncScreen(
 
         Divider()
 
-        // ===== TABLE SYNC =====
         Button(
             enabled = !productSyncing && !outletSyncing && !tableSyncing,
             onClick = { tableVm.syncTables() },
@@ -96,7 +96,6 @@ fun SyncScreen(
 
         Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-        // ===== ORDER SYNC (POS → FIRESTORE) =====
         Button(
             enabled = !orderSyncing && !productSyncing && !outletSyncing && !tableSyncing,
             onClick = { orderSyncVm.syncOrders() },
@@ -116,5 +115,6 @@ fun SyncScreen(
             Text("Back")
         }
     }
+
 }
 

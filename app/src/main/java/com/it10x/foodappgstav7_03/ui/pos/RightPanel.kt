@@ -285,10 +285,16 @@ fun RightPanel(
                         tableNo?.let { onOpenBill(it) }
                     },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+//                    colors = ButtonDefaults.buttonColors(
+//    containerColor = MaterialTheme.colorScheme.secondary,
+//    contentColor = MaterialTheme.colorScheme.onSecondary
+//)
                     colors = ButtonDefaults.buttonColors(
-    containerColor = MaterialTheme.colorScheme.secondary,
-    contentColor = MaterialTheme.colorScheme.onSecondary
-)
+                        containerColor = if (canOpenBill) Color(0xFF2E7D32) else Color.Gray,
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Gray,
+                        disabledContentColor = Color.White
+                    )
                 ) {
                     Icon(
                         Icons.Default.Receipt,

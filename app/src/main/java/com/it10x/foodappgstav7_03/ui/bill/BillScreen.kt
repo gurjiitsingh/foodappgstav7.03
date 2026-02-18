@@ -286,7 +286,7 @@ private fun BillRow(label: String, value: Double,currency: String, bold: Boolean
     ) {
         Text(label)
         Text(
-            "$currency%.2f ".format(value),
+            "$currency${"%.2f".format(value)}",
             fontWeight = if (bold) androidx.compose.ui.text.font.FontWeight.Bold else null
         )
     }

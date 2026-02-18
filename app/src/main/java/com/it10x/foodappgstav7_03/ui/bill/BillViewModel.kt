@@ -290,9 +290,14 @@ class BillViewModel(
             val percentValue = itemSubtotal * (percent / 100.0)
 
             val discount = if (flat > 0) flat else percentValue
+            val safeDiscount = discount.coerceAtMost(itemSubtotal)
 
-            val grandTotal = (itemSubtotal + taxTotal - discount)
-                .coerceAtLeast(0.0)
+            val adjustedTax =
+                if (itemSubtotal == 0.0) 0.0
+                else taxTotal * (1 - safeDiscount / itemSubtotal)
+
+            val grandTotal = (itemSubtotal - safeDiscount) + adjustedTax
+
 
             // ===========================
             // PAYMENT CALCULATION
@@ -467,8 +472,8 @@ class BillViewModel(
                 dLandmark = deliveryAddress?.landmark,
 
                 itemTotal = itemSubtotal,
-                taxTotal = taxTotal,
-                discountTotal = discount,
+                taxTotal = adjustedTax,
+                discountTotal = safeDiscount,
                 grandTotal = grandTotal,
 
                 paymentMode = paymentMode,
