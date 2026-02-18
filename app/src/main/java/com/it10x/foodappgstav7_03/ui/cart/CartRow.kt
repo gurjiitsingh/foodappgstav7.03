@@ -17,10 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCartEntity
-import com.it10x.foodappgstav7_03.ui.theme.PosError
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.style.TextOverflow
+import com.it10x.foodappgstav7_03.ui.theme.PosTheme
 
 @Composable
 fun CartRow(
@@ -47,14 +47,14 @@ fun CartRow(
             Icon(
                 imageVector = Icons.Default.Edit,
                 contentDescription = "Add Note",
-                tint = Color(0xFFFFB703)
+                tint = MaterialTheme.colorScheme.primary
             )
         }
 
-        // 🧾 NAME COLUMN (Flexible — Shrinks First)
+        // 🧾 NAME COLUMN
         Column(
             modifier = Modifier
-                .weight(1f)   // ✅ only this shrinks
+                .weight(1f)
                 .padding(start = 4.dp, end = 6.dp)
         ) {
 
@@ -62,9 +62,9 @@ fun CartRow(
                 text = item.name,
                 fontWeight = FontWeight.Medium,
                 fontSize = 15.sp,
-                color = Color(0xFFE0E0E0),
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis  // 🔥 Prevent overlap
+                overflow = TextOverflow.Ellipsis
             )
 
             item.note?.let { note ->
@@ -72,7 +72,7 @@ fun CartRow(
                     Text(
                         text = "📝 $note",
                         fontSize = 12.sp,
-                        color = Color(0xFFFFB703),
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -80,72 +80,100 @@ fun CartRow(
             }
         }
 
-        // ➕ QTY (Fixed Width — Never Shrinks)
+        // ➕ QTY
         Row(
-            modifier = Modifier
-                .width(110.dp),   // ✅ fixed width
+            modifier = Modifier.width(110.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
 
+            // ➖ Remove
             IconButton(
                 onClick = { cartViewModel.decrease(item.productId, tableNo) },
                 modifier = Modifier
                     .size(28.dp)
-                    .background(Color(0xFFDC2626), shape = MaterialTheme.shapes.small)
+                    .background(
+                        PosTheme.accent.cartRemoveBorder,
+                        shape = MaterialTheme.shapes.small
+                    )
             ) {
-                Text("−", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text(
+                    "−",
+                    color = PosTheme.accent.cartRemoveText,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
             }
 
             Text(
                 text = item.quantity.toString(),
                 fontWeight = FontWeight.Medium,
                 fontSize = 15.sp,
-                color = Color(0xFFEEEEEE)
+                color = MaterialTheme.colorScheme.onSurface
             )
 
+            // ➕ Add
             IconButton(
                 onClick = { cartViewModel.increase(item) },
                 modifier = Modifier
                     .size(28.dp)
-                    .background(Color(0xFF16A34A), shape = MaterialTheme.shapes.small)
+                    .background(
+                        PosTheme.accent.cartAddBg,
+                        shape = MaterialTheme.shapes.small
+                    )
             ) {
-                Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text(
+                    "+",
+                    color = PosTheme.accent.cartAddText,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
             }
         }
 
         Spacer(Modifier.width(15.dp))
 
-        // 🍳 ACTION BUTTONS (Fixed Width)
+        // 🍳 ACTION BUTTONS
         Row(
-            modifier = Modifier.width(120.dp),   // ✅ fixed
+            modifier = Modifier.width(120.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End
         ) {
 
-            Button(
-                onClick = { onCartActionDirectMoveToBill(item, true) },
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
-            ) {
-                Icon(Icons.Default.SoupKitchen, null, Modifier.size(15.dp))
-                Spacer(Modifier.width(2.dp))
-
-                Icon(Icons.Default.Receipt, null, Modifier.size(15.dp))
-            }
-
-            Spacer(Modifier.width(4.dp))
+//            Button(
+//                onClick = { onCartActionDirectMoveToBill(item, true) },
+//                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = MaterialTheme.colorScheme.primary
+//                )
+//            ) {
+//                Icon(Icons.Default.SoupKitchen, null, Modifier.size(15.dp))
+//                Spacer(Modifier.width(2.dp))
+//                Icon(Icons.Default.Receipt, null, Modifier.size(15.dp))
+//            }
+//
+//            Spacer(Modifier.width(4.dp))
 
             OutlinedButton(
                 onClick = { onCartActionDirectMoveToBill(item, false) },
-                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp)
+                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outline
+                )
             ) {
-                Icon(Icons.Default.Receipt, null, Modifier.size(15.dp))
+                Icon(
+                    Icons.Default.Receipt,
+                    null,
+                    Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
 
     Spacer(Modifier.height(3.dp))
-    Divider(color = Color.LightGray.copy(alpha = 0.25f))
+    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
     Spacer(Modifier.height(3.dp))
 
     if (showNoteDialog) {
@@ -182,5 +210,5 @@ fun CartRow(
             }
         )
     }
-
 }
+

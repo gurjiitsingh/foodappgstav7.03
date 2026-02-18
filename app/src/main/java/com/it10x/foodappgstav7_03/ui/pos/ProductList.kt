@@ -86,11 +86,11 @@ private fun ParentProductCard(
     val productBg = MaterialTheme.colorScheme.background//MaterialTheme.colorScheme.surface
     val productText = MaterialTheme.colorScheme.onSurface
 
-    val addBg = MaterialTheme.colorScheme.primary
-    val addText = MaterialTheme.colorScheme.onPrimary
+    val addBg = PosTheme.accent.cartAddBg
+    val addText = PosTheme.accent.cartAddText
 
-    val removeBorder = MaterialTheme.colorScheme.error
-    val removeText = MaterialTheme.colorScheme.onError
+    val removeBorder = PosTheme.accent.cartRemoveBorder
+    val removeText = PosTheme.accent.cartRemoveText
 
 
     Surface(
@@ -153,18 +153,19 @@ private fun ParentProductCard(
                 // ➖ Remove (border only)
                 OutlinedButton(
                     onClick = { cartViewModel.decrease(product.id, tableNo) },
-                    border = BorderStroke(1.5.dp, Color(0xFFF97316)), // orange border
-                    modifier = Modifier.size(width = 48.dp, height = 48.dp), // increased size
+                    border = BorderStroke(1.5.dp, removeBorder),
+                    modifier = Modifier.size(width = 48.dp, height = 48.dp),
                     contentPadding = PaddingValues(0.dp),
                     shape = RectangleShape
                 ) {
                     Text(
                         text = "−",
-                        color = removeText, // keep theme text color
+                        color = removeText,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
+
 
                 if (currentQty > 0) {
                     Text(

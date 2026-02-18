@@ -39,9 +39,7 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.SoupKitchen
 import com.it10x.foodappgstav7_03.ui.cart.CartRow
 import com.it10x.foodappgstav7_03.ui.cart.MiniCartRow
-import com.it10x.foodappgstav7_03.ui.theme.PosError
-import com.it10x.foodappgstav7_03.ui.theme.PosSuccess
-import com.it10x.foodappgstav7_03.ui.theme.PosWarning
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -261,7 +259,10 @@ fun RightPanel(
                         onOpenKitchen(tableNo ?: orderType)
                     },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PosSuccess)
+                    colors = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    contentColor = MaterialTheme.colorScheme.onPrimary
+)
                 ) {
                     Icon(
                         Icons.Default.SoupKitchen,
@@ -284,7 +285,10 @@ fun RightPanel(
                         tableNo?.let { onOpenBill(it) }
                     },
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PosWarning)
+                    colors = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.secondary,
+    contentColor = MaterialTheme.colorScheme.onSecondary
+)
                 ) {
                     Icon(
                         Icons.Default.Receipt,

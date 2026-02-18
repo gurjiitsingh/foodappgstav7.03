@@ -49,7 +49,8 @@ import androidx.compose.runtime.Composable
 import com.it10x.foodappgstav7_03.firebase.ClientIdStore
 import com.it10x.foodappgstav7_03.ui.settings.ClientSetupScreen
 import com.it10x.foodappgstav7_03.ui.theme.FoodPosTheme
-import com.it10x.foodappgstav7_03.ui.theme.PosDarkStyle
+import com.it10x.foodappgstav7_03.ui.theme.PosThemeMode
+
 import com.it10x.foodappgstav7_03.viewmodel.ThemeViewModel
 
 
@@ -69,20 +70,17 @@ class MainActivity : ComponentActivity() {
 
 
             val themeVM: ThemeViewModel = viewModel()
-            val darkMode by themeVM.darkMode.collectAsState()
-            val style by themeVM.style.collectAsState()
 
-            val mode = darkMode
 
-            val darkStyle =
-                if (style == "PREMIUM")
-                    PosDarkStyle.PREMIUM
-                else
-                    PosDarkStyle.FAST_POS
+
+            val themeModeString by themeVM.themeMode.collectAsState()
+            val themeMode = PosThemeMode.valueOf(themeModeString)
+
+
+
 
             FoodPosTheme(
-                mode = mode,
-                darkStyle = darkStyle
+                mode = themeMode
             ) {
 
             val context = LocalContext.current

@@ -6,13 +6,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.it10x.foodappgstav7_03.viewmodel.ThemeViewModel
-import com.it10x.foodappgstav7_03.ui.theme.PosDarkStyle
+import com.it10x.foodappgstav7_03.ui.theme.PosThemeMode
 
 @Composable
 fun ThemeSettingsScreen(vm: ThemeViewModel = viewModel()) {
 
-    val darkMode by vm.darkMode.collectAsState()
-    val style by vm.style.collectAsState()
+    val themeModeString by vm.themeMode.collectAsState()
+    val themeMode = PosThemeMode.valueOf(themeModeString)
 
     Column(
         Modifier
@@ -25,39 +25,32 @@ fun ThemeSettingsScreen(vm: ThemeViewModel = viewModel()) {
 
         Divider()
 
-        Text("Dark Mode", style = MaterialTheme.typography.titleMedium)
+        Text("Theme Mode", style = MaterialTheme.typography.titleMedium)
 
-        listOf("AUTO", "LIGHT", "WHITE", "DARK").forEach { mode ->
+        Text("Theme Mode", style = MaterialTheme.typography.titleMedium)
+
+        listOf(
+            PosThemeMode.AUTO,
+            PosThemeMode.LIGHT,
+            PosThemeMode.DARK,
+            PosThemeMode.GSTA,
+            PosThemeMode.SQUARE,
+            PosThemeMode.LIGHTSPEED,
+            PosThemeMode.TOAST
+        ).forEach { mode ->
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 RadioButton(
-                    selected = darkMode == mode,
-                    onClick = { vm.setDarkMode(mode) }
+                    selected = themeMode == mode,
+                    onClick = { vm.setThemeMode(mode) }
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(mode)
+                Text(mode.name)
             }
         }
 
-        Divider()
-
-        Text("Style", style = MaterialTheme.typography.titleMedium)
-
-        // Add PRO_POS option
-        listOf(PosDarkStyle.FAST_POS, PosDarkStyle.PREMIUM, PosDarkStyle.PRO_POS).forEach { s ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                RadioButton(
-                    selected = style == s.name,
-                    onClick = { vm.setStyle(s.name) }
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(s.name)
-            }
-        }
     }
 }

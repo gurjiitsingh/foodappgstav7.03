@@ -6,170 +6,37 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 // =====================================================
-// POS BRAND COLORS (LOCKED DEFAULTS)
+// THEME MODES
 // =====================================================
 
-val PosOrange = Color(0xFFF97316)
+enum class PosThemeMode {
+    AUTO,
+    LIGHT,
+    DARK,
+    GSTA,
 
-val PosDarkBg = Color(0xFF0F172A)
-val PosCardBg = Color(0xFF1E293B)
-val PosBorder = Color(0xFF334155)
+    // ✅ NEW THEMES
+    SQUARE,
+    LIGHTSPEED,
+    TOAST
+}
 
-val DarkAltBg = Color(0xFF020617)
-val DarkAltCard = Color(0xFF111827)
-val OrangeAlt = Color(0xFFFB923C)
-
-val PosTextPrimary = Color(0xFFF8FAFC)
-val PosTextSecondary = Color(0xFFCBD5E1)
-
-val LightBg = Color(0xFFF1F5F9)
-val LightCard = Color(0xFFE5E7EB)
-
-val PosSuccess = Color(0xFF16A34A)
-val PosWarning = Color(0xFFFACC15)
-val PosError = Color(0xFFDC2626)
-
-val PosGreen = Color(0xFF16A34A)
-val PosBlue = Color(0xFF2563EB)
 
 // =====================================================
-// ACCENT SYSTEM
+// ACCENT + PRODUCT COLORS
 // =====================================================
 
 data class PosAccentColors(
-    val primaryButton: Color,
-    val onPrimaryButton: Color,
-
-    val successButton: Color,
-    val onSuccessButton: Color,
-
-    val warningButton: Color,
-    val onWarningButton: Color,
-
-    val dangerButton: Color,
-    val onDangerButton: Color,
-
-    val cartAdd: Color,
-    val onCartAdd: Color,
-    val cartRemove: Color,
-    val onCartRemove: Color
+    val cartAddBg: Color,        // ➜ Add to Cart button background
+    val cartAddText: Color,      // ➜ Add to Cart button text color
+    val cartRemoveBorder: Color, // ➜ Remove button border color
+    val cartRemoveText: Color    // ➜ Remove button text color
 )
 
-// ---------- FAST POS (current look locked) ----------
-private val FastAccent = PosAccentColors(
-    primaryButton = PosOrange,
-    onPrimaryButton = Color.Black,
-
-    successButton = PosSuccess,
-    onSuccessButton = Color.White,
-
-    warningButton = PosWarning,
-    onWarningButton = Color(0xFF1A1A1A),
-
-    dangerButton = PosError,
-    onDangerButton = Color.White,
-
-    cartAdd = Color(0xFF16A34A),
-    onCartAdd = Color.White,
-
-    cartRemove = Color(0xFFDC2626),
-    onCartRemove = Color.White
+data class PosProductColors(
+    val productCardBg: Color,    // ➜ Product card background
+    val productCardText: Color   // ➜ Product name text color
 )
-
-// ---------- PREMIUM (same for now — editable later) ----------
-private val PremiumAccent = FastAccent
-
-// ---------- PRO POS (same for now — editable later) ----------
-private val ProAccent = FastAccent
-
-// =====================================================
-// COLOR SCHEMES
-// =====================================================
-
-private val DarkScheme = darkColorScheme(
-    primary = PosOrange,
-    onPrimary = Color.Black,
-    background = PosDarkBg,
-    onBackground = PosTextPrimary,
-    surface = PosCardBg,
-    onSurface = PosTextPrimary,
-    outline = PosBorder,
-    error = PosError,
-    onError = Color.White
-)
-
-private val DarkAltScheme = darkColorScheme(
-    primary = OrangeAlt,
-    onPrimary = Color.White,
-    background = DarkAltBg,
-    onBackground = PosTextPrimary,
-    surface = DarkAltCard,
-    onSurface = PosTextPrimary,
-    outline = PosBorder,
-    error = PosError,
-    onError = Color.White
-)
-
-private val LightScheme = lightColorScheme(
-    primary = PosGreen,
-    onPrimary = Color.White,
-    background = LightBg,
-    onBackground = Color.Black,
-    surface = LightCard,
-    onSurface = Color.Black,
-    outline = Color(0xFFE5E7EB),
-    error = PosError,
-    onError = Color.White
-)
-
-private val WhiteScheme = lightColorScheme(
-    primary = PosBlue,
-    onPrimary = Color.White,
-    background = Color.White,
-    onBackground = Color.Black,
-    surface = Color.White,
-    onSurface = Color.Black,
-    outline = Color(0xFFE5E7EB),
-    error = PosError,
-    onError = Color.White
-)
-
-// =====================================================
-// THEME WRAPPER
-// =====================================================
-
-enum class PosDarkStyle {
-    FAST_POS,
-    PREMIUM,
-    PRO_POS
-}
-
-@Composable
-fun FoodPosTheme(
-    mode: String = "DARK",
-    darkStyle: PosDarkStyle = PosDarkStyle.FAST_POS,
-    content: @Composable () -> Unit
-) {
-
-    val scheme = when (mode) {
-        "WHITE" -> WhiteScheme
-        "LIGHT" -> LightScheme
-        "DARK" -> if (darkStyle == PosDarkStyle.PREMIUM) DarkAltScheme else DarkScheme
-        else -> if (isSystemInDarkTheme()) DarkScheme else LightScheme
-    }
-
-    PosTheme.accent = when (darkStyle) {
-        PosDarkStyle.FAST_POS -> FastAccent
-        PosDarkStyle.PREMIUM -> PremiumAccent
-        PosDarkStyle.PRO_POS -> ProAccent
-    }
-
-    MaterialTheme(
-        colorScheme = scheme,
-        typography = Typography,
-        content = content
-    )
-}
 
 // =====================================================
 // GLOBAL ACCESS
@@ -178,4 +45,191 @@ fun FoodPosTheme(
 object PosTheme {
     lateinit var accent: PosAccentColors
         internal set
+    lateinit var product: PosProductColors
+        internal set
+}
+
+// =====================================================
+// MAIN THEME
+// =====================================================
+
+@Composable
+fun FoodPosTheme(
+    mode: PosThemeMode = PosThemeMode.AUTO,
+    content: @Composable () -> Unit
+) {
+    val isSystemDark = isSystemInDarkTheme()
+
+    val finalMode = when (mode) {
+        PosThemeMode.AUTO -> if (isSystemDark) PosThemeMode.DARK else PosThemeMode.LIGHT
+        else -> mode
+    }
+
+    val colorScheme = when (finalMode) {
+
+        // ================= LIGHT THEME =================
+        PosThemeMode.LIGHT -> {
+
+            PosTheme.accent = PosAccentColors(
+                cartAddBg = Color(0xFFCFCD7F),
+                cartAddText = Color.White,            // ⚪ White text
+                cartRemoveBorder = Color(0xFFCFCD7F), // 🔴 Red border
+                cartRemoveText = Color(0xFFDC2626)    // 🔴 Red text
+            )
+
+            PosTheme.product = PosProductColors(
+                productCardBg = Color.White,          // ⚪ White card
+                productCardText = Color.Black         // ⚫ Black text
+            )
+
+            lightColorScheme(
+                primary = Color(0xFF16A34A),           // 🟢 Primary Green
+                onPrimary = Color.White,
+                background = Color(0xFFF8FAFC),        // 🩶 Light gray background
+                onBackground = Color.Black,
+                surface = Color.White,
+                onSurface = Color.Black,
+                error = Color(0xFFDC2626)              // 🔴 Error red
+            )
+        }
+
+        // ================= DARK THEME =================
+        PosThemeMode.DARK -> {
+
+            PosTheme.accent = PosAccentColors(
+                cartAddBg = Color(0xFFF97316),        // 🟠 Orange (Add button)
+                cartAddText = Color.White,            // ⚪ White text
+                cartRemoveBorder = Color(0xFFF97316), // 🟠 Orange border
+                cartRemoveText = Color(0xFFF97316)    // 🟠 Orange text
+            )
+
+            PosTheme.product = PosProductColors(
+                productCardBg = Color(0xFF1E293B),    // 🔵 Dark slate card
+                productCardText = Color.White         // ⚪ White text
+            )
+
+            darkColorScheme(
+                primary = Color(0xFFF97316),          // 🟠 Primary Orange
+                onPrimary = Color.White,
+                background = Color(0xFF0F172A),       // 🔵 Dark blue background
+                onBackground = Color.White,
+                surface = Color(0xFF1E293B),          // 🔵 Card surface
+                onSurface = Color.White,
+                error = Color(0xFFDC2626)             // 🔴 Error red
+            )
+        }
+
+        // ================= GSTA THEME =================
+        PosThemeMode.GSTA -> {
+
+            PosTheme.accent = PosAccentColors(
+                cartAddBg = Color(0xFFF97316),        // 🟠 Orange (Add button)
+                cartAddText = Color.White,            // ⚪ White text
+                cartRemoveBorder = Color(0xFFF97316), // 🟠 Orange border
+                cartRemoveText = Color(0xFFF97316)    // 🟠 Orange text
+            )
+
+            PosTheme.product = PosProductColors(
+                productCardBg = Color(0xFF1C1C1C),    // ⚫ Dark gray card
+                productCardText = Color.White
+            )
+
+            darkColorScheme(
+                primary = Color.White,
+                onPrimary = Color.Black,
+                background = Color(0xFF111111),       // ⚫ Almost black background
+                onBackground = Color.White,
+                surface = Color(0xFF1C1C1C),
+                onSurface = Color.White,
+                error = Color(0xFFDC2626)
+            )
+        }
+
+        // ================= SQUARE THEME =================
+        PosThemeMode.SQUARE -> {
+
+            PosTheme.accent = PosAccentColors(
+                cartAddBg = Color(0xFF65A30D),        // 🥑 Avocado green
+                cartAddText = Color.White,
+                cartRemoveBorder = Color(0xFF84CC16), // 🟢 Lime border
+                cartRemoveText = Color(0xFF84CC16)
+            )
+
+            PosTheme.product = PosProductColors(
+                productCardBg = Color(0xFFF7FEE7),    // 🟢 Very light lime
+                productCardText = Color(0xFF1A2E05)   // Dark green text
+            )
+
+            lightColorScheme(
+                primary = Color(0xFF65A30D),           // Avocado
+                onPrimary = Color.White,
+                background = Color(0xFFECFCCB),        // Soft lime background
+                onBackground = Color(0xFF1A2E05),
+                surface = Color.White,
+                onSurface = Color(0xFF1A2E05),
+                error = Color(0xFFDC2626)
+            )
+        }
+
+        // ================= LIGHTSPEED THEME =================
+        PosThemeMode.LIGHTSPEED -> {
+
+            PosTheme.accent = PosAccentColors(
+                cartAddBg = Color(0xFF10B981),        // 🌿 Mint green
+                cartAddText = Color.White,
+                cartRemoveBorder = Color(0xFF34D399), // Soft mint border
+                cartRemoveText = Color(0xFF10B981)
+            )
+
+            PosTheme.product = PosProductColors(
+                productCardBg = Color(0xFFE6FFFA),    // Very light mint
+                productCardText = Color(0xFF064E3B)   // Deep teal text
+            )
+
+            lightColorScheme(
+                primary = Color(0xFF10B981),          // Mint
+                onPrimary = Color.White,
+                background = Color(0xFFD1FAE5),       // Soft mint background
+                onBackground = Color(0xFF064E3B),
+                surface = Color.White,
+                onSurface = Color(0xFF064E3B),
+                error = Color(0xFFDC2626)
+            )
+        }
+
+        // ================= TOAST THEME =================
+        PosThemeMode.TOAST -> {
+
+            PosTheme.accent = PosAccentColors(
+                cartAddBg = Color(0xFFCFCD7F),
+                cartAddText = Color.White,            // ⚪ White text
+                cartRemoveBorder = Color(0xFFCFCD7F), // 🔴 Red border
+                cartRemoveText = Color(0xFFDC2626)    // 🔴 Red text
+            )
+
+            PosTheme.product = PosProductColors(
+                productCardBg = Color(0xFFFFFBEB),    // Soft warm cream
+                productCardText = Color(0xFF78350F)   // Deep brown text
+            )
+
+            lightColorScheme(
+                primary = Color(0xFFD97706),          // Turmeric
+                onPrimary = Color.White,
+                background = Color(0xFFFEF3C7),       // Warm light yellow
+                onBackground = Color(0xFF78350F),
+                surface = Color.White,
+                onSurface = Color(0xFF78350F),
+                error = Color(0xFFDC2626)
+            )
+        }
+
+
+
+        else -> lightColorScheme()
+    }
+
+    MaterialTheme(
+        colorScheme = colorScheme,
+        content = content
+    )
 }

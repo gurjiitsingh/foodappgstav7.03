@@ -107,17 +107,18 @@ fun KitchenScreen(
                     text = "Order Summary",
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
-                    color = Color(0xFFEEEEEE)
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                Divider(color = Color.Gray.copy(alpha = 0.4f))
+
+                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 SummaryRow("Subtotal", "₹%.2f".format(subTotal))
                 SummaryRow("Tax", "₹%.2f".format(totalTax))
-                Divider(color = Color.Gray.copy(alpha = 0.4f))
+                Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                 SummaryRow(
                     "Grand Total",
                     "₹%.2f".format(grandTotal),
                     bold = true,
-                    color = Color(0xFF16A34A)
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -206,18 +207,19 @@ fun SummaryRow(
         Text(
             label,
             fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
-            color = Color(0xFFDDDDDD), // 🔹 light gray label
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = if (bold) 15.sp else 14.sp
         )
+
         Text(
             value,
             fontWeight = if (bold) FontWeight.Bold else FontWeight.Medium,
             color = when {
                 color != Color.Unspecified -> color
-                bold -> Color(0xFFF5F5F5) // brighter for total
-                else -> Color(0xFFBDBDBD) // soft gray for digits
+                else -> MaterialTheme.colorScheme.onSurface
             },
             fontSize = if (bold) 16.sp else 14.sp
         )
     }
 }
+
