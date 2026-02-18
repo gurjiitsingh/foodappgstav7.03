@@ -249,30 +249,30 @@ fun RightPanel(
             ) {
 
                 // 🍳 OPEN KITCHEN
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(42.dp), // 👈 fixed compact height
-                    enabled = canOpenKitchen,
-                    onClick = {
-                        if (!canOpenKitchen) return@Button
-                        onOpenKitchen(tableNo ?: orderType)
-                    },
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    colors = ButtonDefaults.buttonColors(
-    containerColor = MaterialTheme.colorScheme.primary,
-    contentColor = MaterialTheme.colorScheme.onPrimary
-)
-                ) {
-                    Icon(
-                        Icons.Default.SoupKitchen,
-                        contentDescription = "Kitchen",
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Kitchen")
-                }
+//                Button(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .height(42.dp), // 👈 fixed compact height
+//                    enabled = canOpenKitchen,
+//                    onClick = {
+//                        if (!canOpenKitchen) return@Button
+//                        onOpenKitchen(tableNo ?: orderType)
+//                    },
+//                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+//                    colors = ButtonDefaults.buttonColors(
+//    containerColor = MaterialTheme.colorScheme.primary,
+//    contentColor = MaterialTheme.colorScheme.onPrimary
+//)
+//                ) {
+//                    Icon(
+//                        Icons.Default.SoupKitchen,
+//                        contentDescription = "Kitchen",
+//                        tint = Color.White,
+//                        modifier = Modifier.size(16.dp)
+//                    )
+//                    Spacer(Modifier.width(6.dp))
+//                    Text("Kitchen")
+//                }
 
                 // 🧾 OPEN BILL
                 Button(
