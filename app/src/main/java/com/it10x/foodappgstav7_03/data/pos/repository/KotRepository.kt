@@ -48,15 +48,15 @@ class KotRepository(
     }
 
     private suspend fun syncKitchenCount(tableNo: String) {
-      //  Log.d("TABLE_DEBUG", "syncKitchenCount() called for table = $tableNo")
+        Log.d("TABLE_DEBUG", "syncKitchenCount() called for table = $tableNo")
 
         val count = kotItemDao.countKitchenPending(tableNo) ?: 0
 
-      //  Log.d("TABLE_DEBUG", "Kitchen pending count from DB = $count")
+        Log.d("TABLE_DEBUG", "Kitchen pending count from DB = $count")
 
         tableDao.setKitchenCount(tableNo, count)
 
-      //  Log.d("TABLE_DEBUG", "Kitchen count updated in tableDao")
+        Log.d("TABLE_DEBUG", "Kitchen count updated in tableDao")
     }
 
     suspend fun syncBillCount(tableNo: String) {

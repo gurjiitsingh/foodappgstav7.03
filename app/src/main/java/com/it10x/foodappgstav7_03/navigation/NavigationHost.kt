@@ -224,7 +224,7 @@ fun NavigationHost(
 
             val cartViewModel: CartViewModel = viewModel(
                 factory = CartViewModelFactory(
-                    repository = CartRepository(
+                        repository = CartRepository(
                         db.cartDao(),
                         db.tableDao()
                     ),
@@ -251,7 +251,7 @@ fun NavigationHost(
 
             val cartViewModel: CartViewModel = viewModel(
                 factory = CartViewModelFactory(
-                    repository = CartRepository(
+                         repository = CartRepository(
                         db.cartDao(),
                         db.tableDao()
                     ),

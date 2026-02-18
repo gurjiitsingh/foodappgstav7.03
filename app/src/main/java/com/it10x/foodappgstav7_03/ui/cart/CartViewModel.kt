@@ -112,6 +112,10 @@ class CartViewModel(
                 ),
                 tableNo =  currentTableId.value!!,
             )
+
+
+            val tableNo = currentTableId.value ?: return@launch
+            repository.syncCartCount(tableNo)
         }
     }
 

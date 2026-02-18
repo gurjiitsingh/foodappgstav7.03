@@ -9,6 +9,7 @@ import com.it10x.foodappgstav7_03.data.pos.entities.TableEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.it10x.foodappgstav7_03.data.pos.repository.TableRepository
 
 object TableStatus {
 
@@ -23,13 +24,18 @@ object TableStatus {
 
 class PosTableViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val dao = AppDatabaseProvider.get(app).tableDao()
 
+
+
+    private val dao = AppDatabaseProvider.get(app).tableDao()
+    init {
+        observeTables()
+    }
     private val _tables = MutableStateFlow<List<TableUiState>>(emptyList())
     val tables: StateFlow<List<TableUiState>> = _tables
 
     private val orderDao = AppDatabaseProvider.get(app).orderMasterDao()
-
+    private val repository = TableRepository(dao)
 
 
 
@@ -184,6 +190,12 @@ class PosTableViewModel(app: Application) : AndroidViewModel(app) {
             if (table.status != TableStatus.ORDERING) return@launch
             dao.updateStatus(tableNo, TableStatus.AVAILABLE)
            // loadTables()
+        }
+    }
+
+    fun syncTablesFromCloud() {
+        viewModelScope.launch {
+            repository.syncFromFirestore()
         }
     }
 
