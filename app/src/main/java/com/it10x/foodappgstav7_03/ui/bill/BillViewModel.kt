@@ -379,12 +379,12 @@ class BillViewModel(
             // PHONE VALIDATION
             // ===========================
 
-            if ((paymentStatus == "CREDIT" || paymentStatus == "PARTIAL")
-                && inputPhone.isBlank()
-            ) {
-                Log.e("CREDIT", "Phone required for credit/partial sale")
-                return@launch
-            }
+                if ((paymentStatus == "CREDIT" || paymentStatus == "PARTIAL")
+                    && inputPhone.isBlank()
+                ) {
+                    sendEvent("Phone required for credit sale")
+                    return@launch
+                }
 
             Log.d("PAY_DEBUG", "---- PAY BILL START ----")
             Log.d("PAY_DEBUG", "Payments: $payments")
