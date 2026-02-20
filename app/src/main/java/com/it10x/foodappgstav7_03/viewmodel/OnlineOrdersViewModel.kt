@@ -18,6 +18,8 @@ import com.it10x.foodappgstav7_03.data.pos.AppDatabaseProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.it10x.foodappgstav7_03.data.mapper.OnlineOrderMapper
+import com.it10x.foodappgstav7_03.data.online.models.createdAtMillis
+
 class OnlineOrdersViewModel(
     private val printerManager: PrinterManager
 ) : ViewModel() {
@@ -93,8 +95,8 @@ fun loadFirstPage() {
 
         pageIndex.value = 0
 
-        _orders.value = repo.getFirstPage(limit.toLong())
-            .sortedByDescending { it.createdAt?.seconds ?: 0L }
+        _orders.value = repo.getNextPage(limit.toLong())
+            .sortedByDescending { it.createdAtMillis() }
 
         _loading.value = false
     }
@@ -107,7 +109,7 @@ fun loadNextPage() {
         pageIndex.value++
 
         _orders.value = repo.getNextPage(limit.toLong())
-            .sortedByDescending { it.createdAt?.seconds ?: 0L }
+            .sortedByDescending { it.createdAtMillis() }
 
         _loading.value = false
     }
@@ -120,8 +122,8 @@ fun loadPrevPage() {
         if (pageIndex.value > 0)
             pageIndex.value--
 
-        _orders.value = repo.getPrevPage(limit.toLong())
-            .sortedByDescending { it.createdAt?.seconds ?: 0L }
+        _orders.value = repo.getNextPage(limit.toLong())
+            .sortedByDescending { it.createdAtMillis() }
 
         _loading.value = false
     }

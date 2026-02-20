@@ -24,23 +24,25 @@ object TableStatus {
 
 class PosTableViewModel(app: Application) : AndroidViewModel(app) {
 
-
-
-
-    private val dao = AppDatabaseProvider.get(app).tableDao()
-    init {
-        observeTables()
-    }
+    // ✅ FIRST — StateFlow
     private val _tables = MutableStateFlow<List<TableUiState>>(emptyList())
     val tables: StateFlow<List<TableUiState>> = _tables
 
+    // ✅ THEN dao
+    private val dao = AppDatabaseProvider.get(app).tableDao()
     private val orderDao = AppDatabaseProvider.get(app).orderMasterDao()
     private val repository = TableRepository(dao)
 
-
-
     private val kotItemDao =
         AppDatabaseProvider.get(app).kotItemDao()
+
+    // ✅ ONLY ONE init
+    init {
+        observeTables()
+    }
+
+
+
 
     data class TableUiState(
         val table: TableEntity,
@@ -60,6 +62,8 @@ class PosTableViewModel(app: Application) : AndroidViewModel(app) {
         GREEN,
         RED
     }
+
+
 
     private fun observeTables() {
         viewModelScope.launch {
@@ -83,14 +87,12 @@ class PosTableViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
 
-                _tables.value = uiList
+                _tables.emit(uiList)
             }
         }
     }
 
-    init {
-        observeTables()
-    }
+
 
     fun loadTables() {
         viewModelScope.launch {
@@ -121,7 +123,7 @@ class PosTableViewModel(app: Application) : AndroidViewModel(app) {
                 }
 
 
-                _tables.value = uiList
+                _tables.emit(uiList)
 
             } catch (e: Exception) {
                 _tables.value = emptyList()

@@ -276,9 +276,16 @@ class BillViewModel(
 
 
 
-        _isProcessing.value = true
-
         viewModelScope.launch {
+
+            if (_isProcessing.value) {
+                sendEvent("Payment already in progress")
+                return@launch
+            }
+
+            _isProcessing.value = true
+
+            try {
 
             val inputPhone = phone.trim()
             val inputName = name.trim().ifBlank { "Customer" }
@@ -286,7 +293,10 @@ class BillViewModel(
             val kotItems = kotItemDao
                 .getItemsForTableSync(tableId)
                 .filter { it.status == "DONE" }
-            if (kotItems.isEmpty()) return@launch
+                if (kotItems.isEmpty()) {
+                    sendEvent("No items to bill")
+                    return@launch
+                }
 
             val itemSubtotal = kotItems.sumOf { it.basePrice * it.quantity }
 
@@ -587,14 +597,32 @@ class BillViewModel(
             }
 
             printOrder(orderMaster, orderItems)
+                sendEvent("Payment successful")
 
             resetBillUi()
+            } catch (e: Exception) {
+                Log.e("PAY_ERROR", "Payment failed", e)
+                sendEvent("Payment failed")
+            } finally {
+                _isProcessing.value = false
+            }
+
+        }
+    }
+
+    fun deleteItem(itemId: String) {
+        viewModelScope.launch {
+            try {
+                kotItemDao.deleteItemById(itemId)   // 👈 use internal tableId
+                kotRepository.syncBillCount(tableId)         // 👈 update table status here
+            } catch (e: Exception) {
+                Log.e("DELETE", "Failed to delete item", e)
+            }
         }
     }
 
 
-
-    fun deleteItem(itemId: String) {
+    fun deleteItem1(itemId: String) {
         viewModelScope.launch {
             try {
                 kotItemDao.deleteItemById(itemId)
@@ -607,7 +635,7 @@ class BillViewModel(
             } catch (e: Exception) {
                 Log.e("DELETE", "Failed to delete item", e)
             }
-//            kotRepository.syncBillCount(tableNo)
+          //  kotRepository.syncBillCount(tableNo)
 //            repository.updateTableStatusOnDelete
 //            kotRepository.syncKinchenCount(tableNo)
 //            kotRepository.syncBillCount(tableNo)

@@ -9,6 +9,7 @@ import com.it10x.foodappgstav7_03.data.pos.dao.OutletDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import java.sql.Timestamp
 
 class PosOrderSyncRepository(
     private val orderMasterDao: OrderMasterDao,
@@ -83,7 +84,10 @@ finalTotal=${item.finalTotal}
                     "paymentStatus" to order.paymentStatus,
                     "orderStatus" to order.orderStatus,
                     "source" to "POS",
-                    "createdAt" to order.createdAt,
+                    "createdAt" to com.google.firebase.Timestamp(
+                        order.createdAt / 1000,
+                        ((order.createdAt % 1000) * 1_000_000).toInt()
+                    ),
                     "syncStatus" to "SYNCED"
                 )
             )
@@ -106,7 +110,10 @@ finalTotal=${item.finalTotal}
                         "taxTotal" to item.taxTotal,
                         "finalPrice" to item.finalPricePerItem,
                         "finalTotal" to item.finalTotal,
-                        "createdAt" to item.createdAt
+                        "createdAt" to com.google.firebase.Timestamp(
+                            item.createdAt / 1000,
+                            ((item.createdAt % 1000) * 1_000_000).toInt()
+                        )
                     )
                 )
             }
@@ -127,3 +134,5 @@ finalTotal=${item.finalTotal}
         }
     }
 }
+
+
