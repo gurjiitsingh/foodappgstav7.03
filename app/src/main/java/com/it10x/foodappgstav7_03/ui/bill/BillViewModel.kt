@@ -81,6 +81,21 @@ class BillViewModel(
     val customerSuggestions: StateFlow<List<PosCustomerEntity>> = _customerSuggestions
 
 
+    // ---------------- PAYMENT PROTECTION ----------------
+
+    private val _event = MutableStateFlow<String?>(null)
+    val event: StateFlow<String?> = _event
+
+    private val _isProcessing = MutableStateFlow(false)
+    val isProcessing: StateFlow<Boolean> = _isProcessing
+
+    private fun sendEvent(message: String) {
+        _event.value = message
+    }
+
+    fun clearEvent() {
+        _event.value = null
+    }
 
     fun setFlatDiscount(value: Double) {
         _discountFlat.value = value.coerceAtLeast(0.0)
@@ -252,6 +267,15 @@ class BillViewModel(
         phone: String
     ) {
 
+        if (_isProcessing.value) {
+            sendEvent("Payment already in progress")
+            return
+        }
+
+
+
+        _isProcessing.value = true
+
         viewModelScope.launch {
 
             val inputPhone = phone.trim()
@@ -260,7 +284,6 @@ class BillViewModel(
             val kotItems = kotItemDao
                 .getItemsForTableSync(tableId)
                 .filter { it.status == "DONE" }
-
             if (kotItems.isEmpty()) return@launch
 
             val itemSubtotal = kotItems.sumOf { it.basePrice * it.quantity }
@@ -295,6 +318,8 @@ class BillViewModel(
             val adjustedTax =
                 if (itemSubtotal == 0.0) 0.0
                 else taxTotal * (1 - safeDiscount / itemSubtotal)
+
+            Log.d("PAY_DEBUG", "adjustedTax: $adjustedTax")
 
             val grandTotal = (itemSubtotal - safeDiscount) + adjustedTax
 
@@ -366,6 +391,11 @@ class BillViewModel(
                 return@launch
             }
 
+            Log.d("PAY_DEBUG", "---- PAY BILL START ----")
+            Log.d("PAY_DEBUG", "Payments: $payments")
+            Log.d("PAY_DEBUG", "Name: $name")
+            Log.d("PAY_DEBUG", "Phone: $phone")
+            Log.d("PAY_DEBUG", "GrandTotal: ${_uiState.value.total}")
 
             // ===========================
 // ENSURE CUSTOMER EXISTS (IF PHONE ENTERED)
@@ -477,9 +507,6 @@ class BillViewModel(
                 grandTotal = grandTotal,
 
                 paymentMode = paymentMode,
-//                paymentStatus = paymentStatus,
-//                paidAmount = totalPaid,
-//                dueAmount = totalCredit,
                 paymentStatus = paymentStatus,
                 paidAmount = paidAmount,
                 dueAmount = dueAmount,
@@ -595,6 +622,9 @@ class BillViewModel(
             } catch (e: Exception) {
                 Log.e("DELETE", "Failed to delete item", e)
             }
+
+//            kotRepository.syncKinchenCount(tableNo)
+//            kotRepository.syncBillCount(tableNo)
         }
     }
     // --------------------------------------------------------

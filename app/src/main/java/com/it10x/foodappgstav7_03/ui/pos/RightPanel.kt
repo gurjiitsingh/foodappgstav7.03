@@ -19,6 +19,7 @@ import android.provider.Settings
 import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.it10x.foodappgstav7_03.BuildConfig
@@ -156,15 +157,19 @@ fun RightPanel(
             .fillMaxWidth()
             .then(
                 if (isMobile) {
-                    Modifier.fillMaxHeight(0.88f)   // ✅ mobile bottom sheet height
+                    Modifier.fillMaxHeight(0.88f)
                 } else {
                     Modifier.widthIn(max = 320.dp).fillMaxHeight()
                 }
             )
-        //    .background(Color(0xFFF7F7F7))
-            .padding(12.dp)
-            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
-    ) {
+            .padding(end = 5.dp)   // ✅ only right side padding
+            .padding(
+                bottom = WindowInsets.navigationBars
+                    .asPaddingValues()
+                    .calculateBottomPadding()
+            )
+    )
+ {
 
         // ---------- ORDER INFO ----------
 
@@ -192,13 +197,70 @@ fun RightPanel(
         }
 
 
+
+
+
+
+
+
+
+        // =========================================================
+// =================== POS ACTION BUTTONS ==================
+// =========================================================
+
+       // OrderSummaryScreen(cartViewModel)
+
+     //   Divider()
+        Spacer(Modifier.width(8.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 💰 Summary (item count + grand total)
+            OrderSummaryCompact(cartViewModel)
+
+            // 🧾 Bill Button
+            Button(
+                modifier = Modifier
+                    .size(56.dp)
+                    .padding(4.dp),
+                enabled = canOpenBill,
+                onClick = {
+                    if (!canOpenBill) return@Button
+                    tableNo?.let { onOpenBill(it) }
+                },
+                contentPadding = PaddingValues(0.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (canOpenBill) Color(0xFF66BB6A) else Color(0xFFBDBDBD),
+                    contentColor = Color.White,
+                    disabledContainerColor = Color(0xFFBDBDBD),
+                    disabledContentColor = Color.White
+                ),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(
+                    Icons.Default.Receipt,
+                    contentDescription = "Bill",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.width(8.dp))
+
         // ---------- CART ----------
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .padding(vertical = 6.dp)
         ) {
-            items(cartItems, key = { it.id }) { item ->
+            // ✅ show latest items first
+            items(cartItems.reversed(), key = { it.id }) { item ->
                 MiniCartRow(
                     item = item,
                     cartViewModel = cartViewModel,
@@ -216,98 +278,7 @@ fun RightPanel(
                         onOpenKitchen(tableNo ?: orderType)
                     }
                 )
-
             }
-        }
-
-        Divider()
-
-        OrderSummaryScreen(cartViewModel)
-
-
-//        OrderSummaryScreen(cartViewModel)
-
-        // =========================================================
-// =================== POS ACTION BUTTONS ==================
-// =========================================================
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 6.dp), // ⬅️ reduced top padding
-            verticalArrangement = Arrangement.spacedBy(6.dp) // ⬅️ tighter spacing between rows
-        ) {
-
-            // 🔹 Row 1 — SEND TO KITCHEN (half width, left aligned)
-
-
-            // 🔹 Row 2 — OPEN KITCHEN + BILL
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-
-                // 🍳 OPEN KITCHEN
-//                Button(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .height(42.dp), // 👈 fixed compact height
-//                    enabled = canOpenKitchen,
-//                    onClick = {
-//                        if (!canOpenKitchen) return@Button
-//                        onOpenKitchen(tableNo ?: orderType)
-//                    },
-//                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-//                    colors = ButtonDefaults.buttonColors(
-//    containerColor = MaterialTheme.colorScheme.primary,
-//    contentColor = MaterialTheme.colorScheme.onPrimary
-//)
-//                ) {
-//                    Icon(
-//                        Icons.Default.SoupKitchen,
-//                        contentDescription = "Kitchen",
-//                        tint = Color.White,
-//                        modifier = Modifier.size(16.dp)
-//                    )
-//                    Spacer(Modifier.width(6.dp))
-//                    Text("Kitchen")
-//                }
-
-                // 🧾 OPEN BILL
-                Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(42.dp), // 👈 fixed compact height
-                    enabled = canOpenBill,
-                    onClick = {
-                        if (!canOpenBill) return@Button
-                        tableNo?.let { onOpenBill(it) }
-                    },
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-//                    colors = ButtonDefaults.buttonColors(
-//    containerColor = MaterialTheme.colorScheme.secondary,
-//    contentColor = MaterialTheme.colorScheme.onSecondary
-//)
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (canOpenBill) Color(0xFF2E7D32) else Color.Gray,
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.Gray,
-                        disabledContentColor = Color.White
-                    )
-                ) {
-                    Icon(
-                        Icons.Default.Receipt,
-                        contentDescription = "Bill",
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Bill")
-                }
-            }
-
-
         }
 
 

@@ -83,7 +83,7 @@ finalTotal=${item.finalTotal}
                     "paymentStatus" to order.paymentStatus,
                     "orderStatus" to order.orderStatus,
                     "source" to "POS",
-                    "createdAt" to FieldValue.serverTimestamp(),
+                    "createdAt" to order.createdAt,
                     "syncStatus" to "SYNCED"
                 )
             )
@@ -106,7 +106,7 @@ finalTotal=${item.finalTotal}
                         "taxTotal" to item.taxTotal,
                         "finalPrice" to item.finalPricePerItem,
                         "finalTotal" to item.finalTotal,
-                        "createdAt" to FieldValue.serverTimestamp()
+                        "createdAt" to item.createdAt
                     )
                 )
             }

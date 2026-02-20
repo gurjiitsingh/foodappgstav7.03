@@ -117,8 +117,7 @@ fun BillDialog(
                     modifier = Modifier
                         .weight(2.2f)
                         .padding(8.dp)
-                        .heightIn(max = 450.dp)
-                        .verticalScroll(rememberScrollState())
+                        .fillMaxHeight()
                 ) {
 
 
@@ -477,9 +476,28 @@ fun BillDialog(
                                                 return@IconButton
                                             }
 
-                                            val amount = creditAmount.value.toDoubleOrNull() ?: return@IconButton
-                                            if (amount <= 0.0) return@IconButton
-                                            if (amount > remainingAmount) return@IconButton
+                                            val amount = creditAmount.value.toDoubleOrNull()
+                                            if (amount == null) {
+                                                Toast.makeText(context, "Invalid amount", Toast.LENGTH_SHORT).show()
+                                                return@IconButton
+                                            }
+
+                                            if (amount <= 0.0) {
+                                                Toast.makeText(context, "Enter valid credit amount", Toast.LENGTH_SHORT).show()
+                                                return@IconButton
+                                            }
+
+                                            if (amount > remainingAmount) {
+                                                Toast.makeText(
+                                                    context,
+                                                    "Amount cannot exceed ₹${String.format(Locale.getDefault(), "%.2f", remainingAmount)}",
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+
+                                                // Auto adjust to max allowed
+                                                creditAmount.value = String.format(Locale.getDefault(), "%.2f", remainingAmount)
+                                                return@IconButton
+                                            }
 
                                             paymentList.add(PaymentInput("CREDIT", amount))
                                             partialPaidAmount += amount
@@ -487,17 +505,26 @@ fun BillDialog(
                                             creditAmount.value = ""
                                             activeInput = null
                                             isCreditSelected = false
+//
+//                                            if (partialPaidAmount >= totalAmount) {
+//                                                billViewModel.payBill(
+//                                                    payments = paymentList.toList(),
+//                                                    name = "Customer",
+//                                                    phone = uiState.value.customerPhone
+//                                                )
+//                                                onDismiss()
+//                                            } else {
+//                                                showRemainingOptions = true
+//                                            }
+                                            billViewModel.payBill(
+                                                payments = paymentList.toList(),
+                                                name = "Customer",
+                                                phone = uiState.value.customerPhone
+                                            )
 
-                                            if (partialPaidAmount >= totalAmount) {
-                                                billViewModel.payBill(
-                                                    payments = paymentList.toList(),
-                                                    name = "Customer",
-                                                    phone = uiState.value.customerPhone
-                                                )
-                                                onDismiss()
-                                            } else {
-                                                showRemainingOptions = true
-                                            }
+                                            onDismiss()
+
+
                                         },
                                         modifier = Modifier
                                             .size(42.dp)
@@ -529,9 +556,17 @@ fun BillDialog(
                                 }
 
                                 // Reset input
-                                creditAmount.value = ""
+                                val remaining = remainingAmount
+
+                                creditAmount.value = String.format(
+                                    Locale.getDefault(),
+                                    "%.2f",
+                                    remaining
+                                )
+
                                 activeInput = "CREDIT"
                                 isCreditSelected = true
+
                                 showRemainingOptions = false
                             },
                             modifier = Modifier
@@ -551,7 +586,7 @@ fun BillDialog(
                             onClick = {
 
 
-                                val amount = creditAmount.value.toDoubleOrNull() ?: 0.0
+
                                 val phone = uiState.value.customerPhone.trim()
 
                                 if (phone.length != 10) {
@@ -563,18 +598,27 @@ fun BillDialog(
                                     return@Button
                                 }
 
-                                if (remainingAmount > 0) {
-                                    billViewModel.payBill(
-                                        payments = listOf(
-                                            PaymentInput("DELIVERY_PENDING", remainingAmount)
-                                        ),
-                                        name = "Customer",
-                                        phone = uiState.value.customerPhone
-                                    )
+//                                if (remainingAmount > 0) {
+//                                    billViewModel.payBill(
+//                                        payments = listOf(
+//                                            PaymentInput("DELIVERY_PENDING", remainingAmount)
+//                                        ),
+//                                        name = "Customer",
+//                                        phone = uiState.value.customerPhone
+//                                    )
+//
+//                                    usedPaymentModes.add("PENDING")
+//                                }
 
-                                    usedPaymentModes.add("PENDING")
-                                }
-                                onDismiss()
+                                billViewModel.payBill(
+                                    payments = listOf(
+                                        PaymentInput("DELIVERY_PENDING", remainingAmount)
+                                    ),
+                                    name = "Customer",
+                                    phone = uiState.value.customerPhone
+                                )
+
+                               onDismiss()
                             },
                             modifier = Modifier.weight(1f).height(38.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF9E9E9E), contentColor = Color.White)

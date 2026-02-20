@@ -61,6 +61,10 @@ fun BillScreen(
     var selectedItemId by remember { mutableStateOf<String?>(null) }
     var selectedItemQty by remember { mutableStateOf(0) }
 
+    val event by viewModel.event.collectAsState()
+    val processing by viewModel.isProcessing.collectAsState()
+
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     if (state.loading) {
@@ -72,12 +76,18 @@ fun BillScreen(
         }
         return
     }
-
+    LaunchedEffect(event) {
+        event?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearEvent()
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 400.dp, max = 400.dp) // ensures visible height for tablets
-            .padding(16.dp)
+            .fillMaxHeight(0.95f)// ensures visible height for tablets
+            .padding(start = 6.dp, top = 6.dp, end = 6.dp)
+
     ) {
         // 🔹 Fixed Header
 
@@ -241,6 +251,11 @@ private fun onPaymentClick(
         return
     }
 
+    if (viewModel.isProcessing.value) {
+        Toast.makeText(context, "Processing...", Toast.LENGTH_SHORT).show()
+        return
+    }
+
     viewModel.viewModelScope.launch {
 
         val hasPending = viewModel.hasPendingKitchenItems()
@@ -293,11 +308,26 @@ private fun BillRow(label: String, value: Double,currency: String, bold: Boolean
 }
 
 @Composable
-private fun PaymentButton(text: String, onClick: () -> Unit) {
-    Button(onClick = onClick) {
-        Text(text)
+private fun PaymentButton(
+    text: String,
+    isProcessing: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = !isProcessing
+    ) {
+        if (isProcessing) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(18.dp),
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text(text)
+        }
     }
 }
+
 
 // =====================================================
 // DELIVERY ADDRESS DIALOG (FIXED)

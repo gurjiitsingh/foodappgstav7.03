@@ -27,18 +27,18 @@ class LocalOrderDetailViewModel(
     val subtotal = products.map { it.sumOf { p -> p.itemSubtotal } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
-    val taxTotal = products.map { it.sumOf { p -> p.taxTotal } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
     val discount = orderInfo
         .map { it?.discountTotal ?: 0.0 }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
-    val grandTotal = combine(products, discount) { items, discount ->
-        val total = items.sumOf { it.finalTotal }
-        (total - discount).coerceAtLeast(0.0)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
+    val taxTotal = orderInfo
+        .map { it?.taxTotal ?: 0.0 }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
+    val grandTotal = orderInfo
+        .map { it?.grandTotal ?: 0.0 }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
 
     val totalPaid = orderInfo
         .map { it?.paidAmount ?: 0.0 }
