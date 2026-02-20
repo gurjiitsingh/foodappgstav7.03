@@ -40,6 +40,7 @@ import com.it10x.foodappgstav7_03.data.pos.dao.PosCustomerDao
 import com.it10x.foodappgstav7_03.data.pos.dao.PosCustomerLedgerDao
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerEntity
 import com.it10x.foodappgstav7_03.data.pos.entities.PosCustomerLedgerEntity
+import com.it10x.foodappgstav7_03.data.pos.repository.KotRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 
@@ -57,7 +58,8 @@ class BillViewModel(
     private val outletRepository: OutletRepository,
     private val paymentRepository: POSPaymentRepository,
     private val customerDao: PosCustomerDao,
-    private val ledgerDao: PosCustomerLedgerDao
+    private val ledgerDao: PosCustomerLedgerDao,
+    private val kotRepository: KotRepository
 ) : ViewModel() {
 
     // --------------------------------------------------------
@@ -328,23 +330,6 @@ class BillViewModel(
             // PAYMENT CALCULATION
             // ===========================
 
-//            val totalPaid = payments
-//                .filter { it.mode in listOf("CASH", "CARD", "UPI", "WALLET") }
-//                .sumOf { it.amount }
-//
-//            val totalCredit = payments
-//                .filter { it.mode == "CREDIT" }
-//                .sumOf { it.amount }
-//
-//            val deliveryPending = payments
-//                .filter { it.mode == "DELIVERY_PENDING" }
-//                .sumOf { it.amount }
-//
-////            val dueAmount = (grandTotal - totalPaid).coerceAtLeast(0.0)
-//            val dueAmount = when {
-//                deliveryPending > 0 -> 0.0   // not yet due
-//                else -> (grandTotal - totalPaid).coerceAtLeast(0.0)
-//            }
 
             val totalPaid = payments
                 .filter { it.mode in listOf("CASH", "CARD", "UPI", "WALLET") }
@@ -622,7 +607,8 @@ class BillViewModel(
             } catch (e: Exception) {
                 Log.e("DELETE", "Failed to delete item", e)
             }
-
+//            kotRepository.syncBillCount(tableNo)
+//            repository.updateTableStatusOnDelete
 //            kotRepository.syncKinchenCount(tableNo)
 //            kotRepository.syncBillCount(tableNo)
         }

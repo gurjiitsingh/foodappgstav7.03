@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.it10x.foodappgstav7_03.data.pos.AppDatabaseProvider
+import com.it10x.foodappgstav7_03.data.pos.repository.KotRepository
 import com.it10x.foodappgstav7_03.data.pos.repository.OrderSequenceRepository
 import com.it10x.foodappgstav7_03.data.pos.repository.OutletRepository
 import com.it10x.foodappgstav7_03.data.pos.repository.POSOrdersRepository
@@ -26,6 +27,12 @@ class BillViewModelFactory(
             val orderSequenceRepository = OrderSequenceRepository(db)
 
             val printerManager = PrinterManager(application.applicationContext)
+
+            val kotRepository = KotRepository(
+                db.kotBatchDao(),
+                db.kotItemDao(),
+                db.tableDao()
+            )
 
             val ordersRepository = POSOrdersRepository(
                 db = db,
@@ -55,7 +62,8 @@ class BillViewModelFactory(
                 outletRepository = OutletRepository(db.outletDao()),
                 paymentRepository = paymentRepository,
                 customerDao = db.posCustomerDao(),
-                ledgerDao = db.posCustomerLedgerDao()
+                ledgerDao = db.posCustomerLedgerDao(),
+                kotRepository = kotRepository
             ) as T
         }
 

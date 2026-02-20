@@ -113,8 +113,8 @@ class POSOrdersRepository(
         tableDao.setCartCount(tableNo, 0)
 
         // release table
-        tableDao.updateStatus(tableNo, "AVAILABLE")
-        tableDao.setActiveOrder(tableNo, "")
+        //tableDao.updateStatus(tableNo, "AVAILABLE")
+        //tableDao.setActiveOrder(tableNo, "")
     }
 
 

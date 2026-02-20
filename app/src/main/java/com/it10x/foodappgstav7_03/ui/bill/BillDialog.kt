@@ -487,17 +487,23 @@ fun BillDialog(
                                                 return@IconButton
                                             }
 
-                                            if (amount > remainingAmount) {
+                                            if (amount > remainingAmount + 0.009) {  // ✅ allow small rounding tolerance
+                                                val exactAllowed = String.format(Locale.getDefault(), "%.2f", remainingAmount)
+                                                val entered = String.format(Locale.getDefault(), "%.2f", amount)
                                                 Toast.makeText(
                                                     context,
-                                                    "Amount cannot exceed ₹${String.format(Locale.getDefault(), "%.2f", remainingAmount)}",
-                                                    Toast.LENGTH_SHORT
+                                                    "Entered ₹$entered exceeds allowed ₹$exactAllowed",
+                                                    Toast.LENGTH_LONG
                                                 ).show()
 
-                                                // Auto adjust to max allowed
-                                                creditAmount.value = String.format(Locale.getDefault(), "%.2f", remainingAmount)
+                                                // Auto adjust to exact rounded allowed value
+                                                creditAmount.value = exactAllowed
                                                 return@IconButton
                                             }
+
+
+
+
 
                                             paymentList.add(PaymentInput("CREDIT", amount))
                                             partialPaidAmount += amount
