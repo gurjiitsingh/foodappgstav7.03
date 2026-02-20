@@ -144,22 +144,24 @@ fun KeyBigCompact(
 
     val isNumber = label.all { it.isDigit() }
 
-    // 🎨 Colors
-    val backgroundColor = when (label) {
-        "CLOSE" -> Color(0xFFD32F2F)   // 🔴 Red
-        "DEL" -> Color(0xFFFFC107)     // 🟡 Yellow
-        "⌫" -> Color(0xFF455A64)       // Dark gray
-        "Spa" -> Color(0xFF4CAF50)     // 🟢 Green
+// 🎨 Colors
+    val backgroundColor = when {
+        label == "CLOSE" -> Color(0xFFD32F2F)   // 🔴 Red
+        label == "DEL" -> Color(0xFFFFC107)     // 🟡 Yellow
+        label == "⌫" -> Color(0xFF455A64)       // Dark gray
+        label == "Spa" -> Color(0xFF4CAF50)     // 🟢 Green
+        isNumber -> Color(0xFFE8F5E9)            // 💚 Very light green numbers
         else -> Color.White
     }
 
-    val textColor = when (label) {
-        "CLOSE" -> Color.White
-        "DEL" -> Color.Black
-        "⌫" -> Color.White
-        "Spa" -> Color.White
+    val textColor = when {
+        label == "CLOSE" -> Color.White
+        label == "DEL" -> Color.Black
+        label == "⌫" -> Color.White
+        label == "Spa" -> Color.White
         else -> Color.Black
     }
+
 
     Button(
         onClick = onClick,
