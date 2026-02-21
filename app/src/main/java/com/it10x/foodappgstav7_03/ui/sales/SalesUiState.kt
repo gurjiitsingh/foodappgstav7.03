@@ -2,6 +2,7 @@ package com.it10x.foodappgstav7_03.ui.sales
 
 import com.it10x.foodappgstav7_03.data.pos.entities.PosOrderMasterEntity
 data class SalesUiState(
+    val itemSales: Map<String, Map<String, Double>>,
     val categorySales: Map<String, Double> = emptyMap(),
     val orders: List<PosOrderMasterEntity> = emptyList(),
     val totalSales: Double = 0.0,

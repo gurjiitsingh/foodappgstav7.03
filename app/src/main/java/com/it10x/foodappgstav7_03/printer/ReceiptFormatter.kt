@@ -3,6 +3,7 @@ package com.it10x.foodappgstav7_03.printer
 import android.util.Log
 import com.it10x.foodappgstav7_03.data.pos.entities.PosKotItemEntity
 import com.it10x.foodappgstav7_03.data.print.OutletInfo
+import com.it10x.foodappgstav7_03.ui.sales.SalesUiState
 
 // -----------------------------
 // PRINT MODELS (ONE TRUTH)
@@ -122,9 +123,6 @@ Thank You!
     }
 
 
-
-
-
     fun billing48(order: PrintOrder, outletInfo: OutletInfo): String {
 
         val LINE_WIDTH = 48
@@ -223,10 +221,6 @@ Thank You!
             )
         }
     }
-
-
-
-
 
 
     // -----------------------------
@@ -476,16 +470,6 @@ ${"-".repeat(48)}
 
 
 
-
-
-
-
-
-
-
-
-
-
     // -----------------------------
 // INTERNAL HELPERS (dynamic lineWidth)
 // -----------------------------
@@ -670,6 +654,92 @@ Thank You!
         return lines
     }
 
+    fun salesReport(
+        state: SalesUiState,
+        outletInfo: OutletInfo,
+        width: Int
+    ): String {
+
+        val divider = "-".repeat(width)
+
+        fun line(label: String, value: Double): String {
+            val formatted = "%.2f".format(value)
+            val space = width - label.length - formatted.length
+            return label + " ".repeat(if (space > 0) space else 1) + formatted
+        }
+
+        val header = buildOutletHeader(outletInfo, width)
+
+        return buildString {
+            append("\u001B\u0061\u0000") // align left
+            append(header + "\n")
+            append(divider + "\n")
+            append("SALES REPORT\n")
+            append(divider + "\n")
+
+            append("From : ${java.util.Date(state.from)}\n")
+            append("To   : ${java.util.Date(state.to)}\n")
+            append(divider + "\n")
+
+            append(line("Total Sales", state.totalSales) + "\n")
+            append(line("Tax", state.taxTotal) + "\n")
+            append(line("Discount", state.discountTotal) + "\n")
+
+            append(divider + "\n")
+
+            state.paymentBreakup.forEach { (type, amount) ->
+                append(line(type, amount) + "\n")
+            }
+
+            append(divider + "\n")
+            append(line("Food", state.foodTotal) + "\n")
+            append(line("Beverages", state.beveragesTotal) + "\n")
+            append(line("Wine", state.wineTotal) + "\n")
+
+            append(divider + "\n\n")
+        }
+    }
+
+
+
+    fun salesBySingleCategory(
+        category: String,
+        items: Map<String, Double>,
+        outletInfo: OutletInfo,
+        width: Int
+    ): String {
+
+        val divider = "-".repeat(width)
+
+        fun line(label: String, value: Double): String {
+            val formatted = "%.2f".format(value)
+            val safeLabel = label.take(width - formatted.length - 1)
+            val space = width - safeLabel.length - formatted.length
+            return safeLabel + " ".repeat(if (space > 0) space else 1) + formatted
+        }
+
+        val header = buildOutletHeader(outletInfo, width)
+
+        return buildString {
+
+            append("\u001B\u0061\u0000")
+            append(header + "\n")
+            append(divider + "\n")
+            append("CATEGORY REPORT\n")
+            append(category.uppercase() + "\n")
+            append(divider + "\n")
+
+            if (items.isEmpty()) {
+                append("No sales data\n")
+            } else {
+                items.forEach { (itemName, total) ->
+                    append(line(itemName, total) + "\n")
+                }
+            }
+
+            append(divider + "\n\n")
+        }
+    }
 
 
 }

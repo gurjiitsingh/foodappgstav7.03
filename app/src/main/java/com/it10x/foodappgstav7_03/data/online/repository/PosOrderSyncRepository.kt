@@ -101,6 +101,7 @@ finalTotal=${item.finalTotal}
                         "id" to item.id,
                         "orderMasterId" to order.id,
                         "name" to item.name,
+                        "categoryId" to item.categoryId,
                         "quantity" to item.quantity,
                         "basePrice" to item.basePrice,
                         "itemSubtotal" to item.itemSubtotal,

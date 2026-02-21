@@ -1,6 +1,7 @@
 package com.it10x.foodappgstav7_03.ui.sales
 
 import android.app.DatePickerDialog
+import com.it10x.foodappgstav7_03.printer.PrinterManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,7 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.it10x.foodappgstav7_03.data.PrinterRole
 import com.it10x.foodappgstav7_03.data.pos.entities.PosOrderMasterEntity
+import com.it10x.foodappgstav7_03.printer.ReceiptFormatter
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -25,7 +28,7 @@ fun SalesScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
-
+    val printer = remember { PrinterManager(context) }
     Column(modifier = Modifier.fillMaxSize()) {
 
         // ---------------- FIXED DATE ROW ----------------
@@ -92,6 +95,21 @@ fun SalesScreen(
                     calendar.get(Calendar.DAY_OF_MONTH)
                 ).show()
             }) { Text("Custom") }
+
+
+
+            Button(
+                onClick = {
+                    printer.printSalesReport(
+                        PrinterRole.BILLING,
+                        uiState
+                    )
+                }
+            ) {
+                Text("Print Report")
+            }
+
+
         }
 
         Divider()
@@ -164,9 +182,50 @@ fun SalesScreen(
                     }
                 }
 
+//                items(uiState.categorySales.toList()) { (category, amount) ->
+//                    SummaryRow(category, amount)
+//                }
+
+
+                val printer = remember { PrinterManager(context) }
+
                 items(uiState.categorySales.toList()) { (category, amount) ->
-                    SummaryRow(category, amount)
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(2.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Column {
+                                Text(category)
+                                Text("₹ %.2f".format(amount))
+                            }
+
+                            Button(
+                                onClick = {
+                                    val items =
+                                        uiState.itemSales[category] ?: emptyMap()
+
+                                    printer.printSingleCategorySales(
+                                        PrinterRole.BILLING,
+                                        category,
+                                        items
+                                    )
+                                }
+                            ) {
+                                Text("Print")
+                            }
+                        }
+                    }
                 }
+
 
                 // ORDERS HEADER
                 item {

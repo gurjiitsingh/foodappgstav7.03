@@ -13,6 +13,7 @@ import com.it10x.foodappgstav7_03.printer.usb.USBPrinter
 import com.it10x.foodappgstav7_03.data.print.OutletMapper
 import com.it10x.foodappgstav7_03.data.pos.AppDatabaseProvider
 import com.it10x.foodappgstav7_03.data.pos.entities.PosKotItemEntity
+import com.it10x.foodappgstav7_03.ui.sales.SalesUiState
 import kotlinx.coroutines.runBlocking
 
 class PrinterManager(
@@ -325,4 +326,68 @@ class PrinterManager(
         }
         printTest(config, onResult)
     }
+
+
+
+    fun printSalesReport(
+        role: PrinterRole,
+        state: SalesUiState,
+        onResult: (Boolean) -> Unit = {}
+    ) {
+
+        val config = prefs.getPrinterConfig(role)
+        if (config == null) {
+            onResult(false)
+            return
+        }
+
+        val size = prefs.getPrinterSize(role) ?: "80mm"
+
+        val outletDao = AppDatabaseProvider.get(context).outletDao()
+        val outletEntity = runBlocking { outletDao.getOutlet() }
+        val info = OutletMapper.fromEntity(outletEntity)
+
+        val width = if (size == "80mm") 48 else 32
+
+        val text = ReceiptFormatter.salesReport(
+            state,
+            info,
+            width
+        )
+
+        printText(role, text, onResult)
+    }
+
+
+    fun printSingleCategorySales(
+        role: PrinterRole,
+        category: String,
+        items: Map<String, Double>,
+        onResult: (Boolean) -> Unit = {}
+    ) {
+
+        val config = prefs.getPrinterConfig(role)
+        if (config == null) {
+            onResult(false)
+            return
+        }
+
+        val size = prefs.getPrinterSize(role) ?: "80mm"
+        val width = if (size == "80mm") 48 else 32
+
+        val outletDao = AppDatabaseProvider.get(context).outletDao()
+        val outletEntity = runBlocking { outletDao.getOutlet() }
+        val info = OutletMapper.fromEntity(outletEntity)
+
+        val text = ReceiptFormatter.salesBySingleCategory(
+            category,
+            items,
+            info,
+            width
+        )
+
+        printText(role, text, onResult)
+    }
+
+
 }
