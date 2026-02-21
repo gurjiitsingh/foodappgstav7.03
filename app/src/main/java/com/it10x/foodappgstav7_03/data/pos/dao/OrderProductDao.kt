@@ -49,9 +49,42 @@ interface OrderProductDao {
 """)
     suspend fun getItemsForTable(tableNo: String): List<PosOrderItemEntity>
 
+    @Query("""
+SELECT categoryId, SUM(finalTotal) as total
+FROM pos_order_items
+GROUP BY categoryId
+""")
+    suspend fun getCategorySalesRaw(): List<CategorySaleRaw>
+
+
+    @Query("""
+    SELECT c.name AS categoryName, SUM(op.finalTotal) AS total
+    FROM pos_order_items op
+    INNER JOIN categories c ON op.categoryId = c.id
+    INNER JOIN pos_order_master om ON op.orderMasterId = om.id
+    WHERE om.paymentStatus = 'PAID'
+    AND om.createdAt BETWEEN :from AND :to
+    GROUP BY c.name
+""")
+    suspend fun getCategorySalesBetween(
+        from: Long,
+        to: Long
+    ): List<CategorySalesResult>
+
+
+
+
 
 
 }
 
 
+//data class CategorySaleRaw(
+//    val categoryId: String,
+//    val total: Double
+//)
 
+data class CategorySalesResult(
+    val categoryName: String,
+    val total: Double
+)

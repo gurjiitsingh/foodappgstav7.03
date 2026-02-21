@@ -280,7 +280,8 @@ fun NavigationHost(
 
             val salesViewModel: SalesViewModel = viewModel(
                 factory = SalesViewModelFactory(
-                    salesMasterDao = db.salesMasterDao()
+                    salesMasterDao = db.salesMasterDao(),
+                    orderProductDao = db.orderProductDao()   // ✅ added
                 )
             )
 

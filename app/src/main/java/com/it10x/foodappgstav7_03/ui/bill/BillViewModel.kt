@@ -205,9 +205,6 @@ class BillViewModel(
 
                 val finalTotal = (subtotal - safeDiscount) + taxAfterDiscount
 
-
-
-
                 _uiState.update { old ->
 
                     old.copy(
