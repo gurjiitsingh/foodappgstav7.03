@@ -175,10 +175,10 @@ if(role == "bill") {
                     return@launch
                 }
 
-                Log.d(
-                    "ORDER_SRNO",
-                    "Printing orderId=$orderId srno=${order.srno} items=${items.size}"
-                )
+//                Log.d(
+//                    "ORDER_SRNO",
+//                    "Printing orderId=$orderId srno=${order.srno} items=${items.size}"
+//                )
 
     printOrderStandard(order, items, role)
 

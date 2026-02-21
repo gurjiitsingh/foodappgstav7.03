@@ -156,7 +156,7 @@ class PrinterManager(
 
         // Get printer configuration and preferences
         val config = prefs.getPrinterConfig(role)
-        val pageSize = prefs.getPrinterSize(role) ?: "80mm"  // ✅ stored in PrinterPreferences
+
 
         if (config == null) {
             Log.e("PRINT_NEW", "No printer configured for role=$role")
@@ -165,7 +165,7 @@ class PrinterManager(
         }
 
         // ✅ Select format based on page size
-        val size = prefs.getPrinterSize(role) ?: "58mm"
+        val size = prefs.getPrinterSize(role) ?: "80mm"
 
         // ✅ Auto-load outlet info if not provided
 
@@ -173,6 +173,12 @@ class PrinterManager(
         val outletEntity = runBlocking { outletDao.getOutlet() }
         val info = OutletMapper.fromEntity(outletEntity)
 
+
+
+//        Log.d(
+//            "PRINT_NEW",
+//            "Outlet Entity = $outletEntity   $info"
+//        )
 
         // ✅ Select format based on printer page size
         val receiptText = when (size) {
@@ -182,10 +188,10 @@ class PrinterManager(
 
 
 
-        Log.d(
-            "PRINT_NEW",
-            "${info.defaultCurrency} Printer type=${config.type}, size=$pageSize, bluetooth=${config.bluetoothAddress}, ip=${config.ip}, "
-        )
+//        Log.d(
+//            "PRINT_NEW",
+//            "${info.defaultCurrency} Printer type=${config.type}, size=$pageSize, bluetooth=${config.bluetoothAddress}, ip=${config.ip}, "
+//        )
 
         // ✅ Printing logic (kept same as before)
         when (config.type) {

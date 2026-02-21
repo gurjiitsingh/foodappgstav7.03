@@ -97,6 +97,9 @@ object ReceiptFormatter {
             append(ALIGN_LEFT)
             append(
                 """
+
+------------------------------
+$outletHeader
 ------------------------------
 $headerBlock
 ----------------------------
@@ -109,6 +112,7 @@ ${totalLine("Tax", order.tax)}
 ------------------------------
 ${totalLine("GRAND TOTAL", order.grandTotal)}
 ------------------------------
+${buildOutletFooter(outletInfo, 32)}
 Thank You!
 
 
@@ -124,7 +128,7 @@ Thank You!
     fun billing48(order: PrintOrder, outletInfo: OutletInfo): String {
 
         val LINE_WIDTH = 48
-        Log.d("RECEIPT_FORMATTER", "billing48() called for orderNo=${order.orderNo}")
+      //  Log.d("RECEIPT_FORMATTER", "billing48() called for orderNo=${order.orderNo}")
         val outletHeader = buildOutletHeader(outletInfo, LINE_WIDTH)
 
 
@@ -211,6 +215,7 @@ ${totalLine48("Tax", order.tax)}
 ------------------------------------------------
 ${totalLine48("GRAND TOTAL", order.grandTotal)}
 ------------------------------------------------
+${buildOutletFooter(outletInfo, 48)}
 Thank You!
 
 
@@ -570,7 +575,7 @@ Thank You!
             info.email?.let { lines += "Email: $it" }
             info.web?.let { lines += "Web: $it" }
             info.gst?.let { lines += "GST: $it" }
-            info.footerNote?.let { lines += it.take(width) }
+         //   info.footerNote?.let { lines += it.take(width) }
         }
 
         if(width==48){
@@ -593,7 +598,7 @@ Thank You!
             info.email?.let { lines += "Email: $it" }
             info.web?.let { lines += "Web: $it" }
             info.gst?.let { lines += "GST: $it" }
-            info.footerNote?.let { lines += it.take(width) }
+           // info.footerNote?.let { lines += it.take(width) }
         }
 
         return lines.joinToString("\n")
@@ -603,6 +608,68 @@ Thank You!
         val pad = (width - text.length) / 2
         return " ".repeat(maxOf(pad, 0)) + text
     }
+
+
+    private fun buildOutletFooter(info: OutletInfo, width: Int): String {
+
+        val note = info.footerNote?.trim()
+
+        // 🔹 If null or blank → return empty (do not show anything)
+        if (note.isNullOrBlank()) return ""
+
+        val wrappedLines = wrapText(note, width)
+
+        return buildString {
+            append("-".repeat(width))
+            append("\n")
+
+            wrappedLines.forEach { line ->
+                append(line)     // left aligned (better for readability)
+                append("\n")
+            }
+
+            append("-".repeat(width))
+            append("\n")
+        }
+    }
+
+    private fun wrapText(text: String, width: Int): List<String> {
+        val words = text.split("\\s+".toRegex())
+        val lines = mutableListOf<String>()
+        var currentLine = ""
+
+        for (word in words) {
+
+            // If single word itself is longer than width
+            if (word.length >= width) {
+                if (currentLine.isNotBlank()) {
+                    lines.add(currentLine.trim())
+                    currentLine = ""
+                }
+
+                // break long word safely
+                word.chunked(width).forEach {
+                    lines.add(it)
+                }
+
+                continue
+            }
+
+            if ((currentLine + word).length + 1 > width) {
+                lines.add(currentLine.trim())
+                currentLine = "$word "
+            } else {
+                currentLine += "$word "
+            }
+        }
+
+        if (currentLine.isNotBlank()) {
+            lines.add(currentLine.trim())
+        }
+
+        return lines
+    }
+
 
 
 }
